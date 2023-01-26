@@ -182,3 +182,12 @@ async def get_syncing(current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_syncing()
 
     return response["data"]
+
+
+# catch all unknown routes
+@app.route("/{full_path:path}")
+async def catch_all_unknown_routes(full_path: str):
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Item not found",
+    )
