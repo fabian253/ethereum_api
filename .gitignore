@@ -131,3 +131,4 @@ dmypy.json
 # Custom
 app/test
 app/config.py
+app/authentication_hash_creation.py
