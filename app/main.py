@@ -12,7 +12,7 @@ from web3.beacon.main import Beacon
 
 import app.config as config
 from app.execution_client_connector import ExecutionClientConnector
-from app.user_db import users_db
+from app.users_db import users_db
 
 tags_metadata = [
     {
