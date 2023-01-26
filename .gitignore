@@ -132,3 +132,4 @@ dmypy.json
 app/test
 app/config.py
 app/authentication_hash_creation.py
+app/users_db.py
