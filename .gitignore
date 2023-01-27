@@ -133,3 +133,5 @@ app/test
 app/config.py
 app/authentication_hash_creation.py
 app/users_db.py
+app/execution_client_connector_test.py
+app/execution_client_connector_test.json
