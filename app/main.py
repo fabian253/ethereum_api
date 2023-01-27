@@ -26,6 +26,10 @@ tags_metadata = [
     {
         "name": "Execution Client Information",
         "description": "Endpoints to retrieve information about the Execution Client"
+    },
+    {
+        "name": "Consensus Client Information",
+        "description": "Endpoints to retrieve information about the Consensus Client"
     }
 ]
 
@@ -168,19 +172,57 @@ async def root():
 
 
 @app.get("/get_block", tags=["Block data"])
-async def get_block(current_user: User = Depends(get_current_active_user), block_number: int = -1):
-    if block_number != -1:
+async def get_block(block_number: Union[int, None] = None, current_user: User = Depends(get_current_active_user)):
+    if block_number is None:
+        response = execution_client.get_block()
+    elif block_number >= 0:
         response = execution_client.get_block(block_number)
     else:
-        response = execution_client.get_block()
+        response = None
+
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Block not found (Block number: {block_number})"
+        )
 
     return response
 
 
-@app.get("/get_syncing", tags=["Execution Client Information"])
-async def get_syncing(current_user: User = Depends(get_current_active_user)):
-    response = consensus_client.get_syncing()
+@app.get("/get_transaction", tags=["Block data"])
+async def get_transaction(transaction_hash: str, current_user: User = Depends(get_current_active_user)):
+    response = execution_client.get_transaction(transaction_hash)
 
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transaction not found (Transaction hash: {transaction_hash})"
+        )
+
+    return response
+
+
+@app.get("/get_execution_client_api_version", tags=["Execution Client Information"])
+async def get_execution_client_api_version(current_user: User = Depends(get_current_active_user)):
+    response = execution_client.get_api_version()
+    return response
+
+
+@app.get("/get_execution_client_version", tags=["Execution Client Information"])
+async def get_execution_client_version(current_user: User = Depends(get_current_active_user)):
+    response = execution_client.get_client_version()
+    return response
+
+
+@app.get("/get_execution_client_syncing", tags=["Execution Client Information"])
+async def get_execution_client_syncing(current_user: User = Depends(get_current_active_user)):
+    response = execution_client.get_syncing()
+    return response
+
+
+@app.get("/get_consensus_client_syncing", tags=["Consensus Client Information"])
+async def get_consensus_client_syncing(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_syncing()
     return response["data"]
 
 
