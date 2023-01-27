@@ -1,4 +1,5 @@
 from web3 import Web3
+from web3.exceptions import BlockNotFound, TransactionNotFound
 import json
 
 
@@ -23,12 +24,15 @@ class ExecutionClientConnector:
 
         return {"client_version": response}
 
+    def get_syncing(self):
+        response = self.get_syncing()
+
+        return json.loads(Web3.toJSON(response))
+
     # Web3 Eth API Properties
 
     def get_default_account(self):
         response = self.execution_client.eth.default_account
-
-
 
         print(type(response))
 
@@ -54,14 +58,21 @@ class ExecutionClientConnector:
     # Web3 Eth API Methods
 
     def get_block(self, block_number: int = None):
-        if block_number is not None:
-            response = self.execution_client.eth.get_block(block_number)
-        else:
-            response = self.execution_client.eth.get_block("latest")
+        try:
+            if block_number is not None:
+                response = self.execution_client.eth.get_block(block_number)
+            else:
+                response = self.execution_client.eth.get_block("latest")
+        except BlockNotFound:
+            return None
 
         return json.loads(Web3.toJSON(response))
 
     def get_transaction(self, transaction_hash: str):
-        response = self.execution_client.eth.get_transaction(transaction_hash)
+        try:
+            response = self.execution_client.eth.get_transaction(
+                transaction_hash)
+        except TransactionNotFound:
+            return None
 
         return json.loads(Web3.toJSON(response))
