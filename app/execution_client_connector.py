@@ -12,7 +12,67 @@ class ExecutionClientConnector:
         self.execution_client = Web3(Web3.HTTPProvider(
             f"http://{self.client_ip}:{self.client_port}"))
 
-    # Web3 API Properties
+    # Gossip methods
+
+    def get_block_number(self):
+        response = self.execution_client.eth.block_number
+
+        return {"block_number": response}
+
+    # State methods
+
+    def default_account(self):
+        response = self.execution_client.eth.default_account
+
+        return {"default_account": response}
+
+    def default_block(self):
+        response = self.execution_client.eth.default_block
+
+        return {"default_block": response}
+
+    def syncing(self):
+        response = self.execution_client.eth.syncing
+
+        if response == False:
+            return {"syncing": False}
+
+        return json.loads(Web3.toJSON(response))
+
+    def coinbase(self):
+        response = self.execution_client.eth.coinbase
+
+        return {"coinbase": response}
+
+    def mining(self):
+        response = self.execution_client.eth.mining
+
+        return {"mining": response}
+
+    def hashrate(self):
+        response = self.execution_client.eth.hashrate
+
+        return {"hashrate": response}
+
+    def max_priority_fee(self):
+        response = self.execution_client.eth.max_priority_fee
+
+        return {"max_priority_fee": response}
+
+    def accounts(self):
+        response = self.execution_client.eth.accounts
+
+        return {"accounts": response}
+
+    def protocol_version(self):
+        response = self.execution_client.eth.protocol_version
+
+        return {"protocol_version": response}
+
+    def chain_id(self):
+        response = self.execution_client.eth.chain_id
+
+        return {"chain_id", response}
 
     def get_api_version(self):
         response = self.execution_client.api
@@ -24,55 +84,114 @@ class ExecutionClientConnector:
 
         return {"client_version": response}
 
-    def get_syncing(self):
-        response = self.get_syncing()
+    def get_balance(self, wallet_address, block_identifier=None):
+        if block_identifier is None:
+            response = self.execution_client.eth.get_balance(wallet_address)
+        else:
+            response = self.execution_client.eth.get_balance(
+                wallet_address, block_identifier)
 
-        return json.loads(Web3.toJSON(response))
-
-    # Web3 Eth API Properties
-
-    def get_default_account(self):
-        response = self.execution_client.eth.default_account
-
-        print(type(response))
-
-        print(response)
-
-        return {"default_account": response}
-
-    def get_default_block(self):
-        response = self.execution_client.eth.default_block
-
-        return {"default_block": response}
-
-    def get_syncing(self):
-        response = self.execution_client.eth.syncing
-
-        return json.loads(Web3.toJSON(response))
+        return {"balance": response}
 
     def get_block_number(self):
-        response = self.execution_client.eth.block_number
+        response = self.execution_client.eth.get_block_number()
 
         return {"block_number": response}
 
-    # Web3 Eth API Methods
+    def get_storage_at(self, wallet_address, position, block_identifier=None):
+        if block_identifier is None:
+            response = self.execution_client.eth.get_storage_at(
+                wallet_address, position)
+        else:
+            response = self.execution_client.eth.get_storage_at(
+                wallet_address, position, block_identifier)
 
-    def get_block(self, block_number: int = None):
+        return {"storage_value": response}
+
+    def get_proof(self, wallet_address, positions, block_identifier=None):
+        if block_identifier is None:
+            response = self.execution_client.eth.get_proof(
+                wallet_address, positions)
+        else:
+            response = self.execution_client.eth.get_proof(
+                wallet_address, positions, block_identifier)
+
+        return json.loads(Web3.toJSON(response))
+
+    def get_code(self, wallet_address):
+        response = self.execution_client.eth.get_code(wallet_address)
+
+        return {"bytecode": response}
+
+    def get_transaction_count(self, wallet_address, block_identifier=None):
+        if block_identifier is None:
+            response = self.execution_client.eth.get_transaction_count(
+                wallet_address)
+        else:
+            response = self.execution_client.eth.get_transaction_count(
+                wallet_address, block_identifier)
+
+        return json.loads(Web3.toJSON(response))
+
+    def estimate_gas(self, from_address, to_address, value):
+        response = self.execution_client.eth.estimate_gas({
+            "to": to_address,
+            "from": from_address,
+            "value": value
+        })
+
+        return {"gas": response}
+
+    # History methods
+
+    def get_block_transaction_count(self, block_identifier):
+        response = self.execution_client.eth.get_block_transaction_count(
+            block_identifier)
+
+        return {"block_transaction_count": response}
+
+    def get_uncle_count(self, block_identifier):
         try:
-            if block_number is not None:
-                response = self.execution_client.eth.get_block(block_number)
+            response = self.execution_client.eth.get_uncle_count(
+                block_identifier)
+        except BlockNotFound:
+            return None
+
+        return {"uncle_count": response}
+
+    def get_block(self, block_identifier=None, full_transactions=False):
+        try:
+            if block_identifier is None:
+                response = self.execution_client.eth.get_block(
+                    self.execution_client.eth.default_block, full_transactions)
             else:
-                response = self.execution_client.eth.get_block("latest")
+                response = self.execution_client.eth.get_block(
+                    block_identifier, full_transactions)
         except BlockNotFound:
             return None
 
         return json.loads(Web3.toJSON(response))
 
-    def get_transaction(self, transaction_hash: str):
+    def get_transaction_by_block(self, block_identifier, transaction_index):
         try:
-            response = self.execution_client.eth.get_transaction(
-                transaction_hash)
+            response = self.execution_client.eth.get_transaction_by_block(
+                block_identifier, transaction_index)
         except TransactionNotFound:
+            return None
+
+        return json.loads(Web3.toJSON(response))
+
+    def get_transaction_receipt(self, transaction_hash):
+        response = self.execution_client.eth.get_transaction_receipt(
+            transaction_hash)
+
+        return json.loads(Web3.toJSON(response))
+
+    def get_uncle_by_block(self, block_identifier, uncle_index):
+        try:
+            response = self.execution_client.eth.get_uncle_by_block(
+                block_identifier, uncle_index)
+        except BlockNotFound:
             return None
 
         return json.loads(Web3.toJSON(response))
