@@ -178,9 +178,9 @@ async def root():
 
 # Execution Client Gossip methods
 
-@app.get("/execution_client/get_block_number", tags=["Execution Client Gossip Methods"])
-async def execution_client_get_block_number(current_user: User = Depends(get_current_active_user)):
-    response = execution_client.get_block_number()
+@app.get("/execution_client/block_number", tags=["Execution Client Gossip Methods"])
+async def execution_client_block_number(current_user: User = Depends(get_current_active_user)):
+    response = execution_client.block_number()
     return response
 
 
@@ -201,12 +201,6 @@ async def execution_client_default_block(current_user: User = Depends(get_curren
 @app.get("/execution_client/syncing", tags=["Execution Client State Methods"])
 async def execution_client_syncing(current_user: User = Depends(get_current_active_user)):
     response = execution_client.syncing()
-    return response
-
-
-@app.get("/execution_client/coinbase", tags=["Execution Client State Methods"])
-async def execution_client_coinbase(current_user: User = Depends(get_current_active_user)):
-    response = execution_client.coinbase()
     return response
 
 
@@ -234,15 +228,10 @@ async def execution_client_accounts(current_user: User = Depends(get_current_act
     return response
 
 
-@app.get("/execution_client/protocol_version", tags=["Execution Client State Methods"])
-async def execution_client_protocol_version(current_user: User = Depends(get_current_active_user)):
-    response = execution_client.protocol_version()
-    return response
-
-
 @app.get("/execution_client/chain_id", tags=["Execution Client State Methods"])
 async def execution_client_chain_id(current_user: User = Depends(get_current_active_user)):
     response = execution_client.chain_id()
+
     return response
 
 
@@ -274,13 +263,6 @@ async def execution_client_get_block_number(current_user: User = Depends(get_cur
 async def execution_client_get_storage_at(wallet_address: str, position: int, block_identifier: Union[int, None] = None, current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_storage_at(
         wallet_address, position, block_identifier)
-    return response
-
-
-@app.get("/execution_client/get_proof", tags=["Execution Client State Methods"])
-async def execution_client_get_proof(wallet_address: str, positions: list[int], block_identifier: Union[int, None] = None, current_user: User = Depends(get_current_active_user)):
-    response = execution_client.get_proof(
-        wallet_address, positions, block_identifier)
     return response
 
 
@@ -325,7 +307,7 @@ async def execution_client_get_uncle_count(block_identifier: Union[int, str], cu
 
 
 @app.get("/execution_client/get_block", tags=["Execution Client History Methods"])
-async def execution_client_get_block(block_identifier: Union[int, str, None] = None, full_transactions=False,  current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_block(block_identifier: Union[int, str, None] = None, full_transactions: bool = False,  current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_block(block_identifier, full_transactions)
 
     if response is None:
@@ -373,7 +355,7 @@ async def execution_client_get_uncle_by_block(block_identifier: Union[int, str],
 
 # Consensus Client
 
-@app.get("consensus_client/get_syncing", tags=["Consensus Client"])
+@app.get("/consensus_client/get_syncing", tags=["Consensus Client"])
 async def get_consensus_client_syncing(current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_syncing()
     return response["data"]
