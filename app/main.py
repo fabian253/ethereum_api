@@ -11,6 +11,7 @@ from web3.beacon.main import Beacon
 
 import app.config as config
 from app.execution_client_connector import ExecutionClientConnector
+from app.consensus_client_connector import ConsensusClientConnector
 from app.users_db import users_db
 
 tags_metadata = [
@@ -31,8 +32,16 @@ tags_metadata = [
         "description": "Fetches historical records of every block back to genesis. This is like one large append-only file, and includes all block headers, block bodies, uncle blocks, and transaction receipts."
     },
     {
-        "name": "Consensus Client",
-        "description": "Endpoints to retrieve information about the Consensus Client"
+        "name": "Consensus Client Beacon Methods",
+        "description": "Set of endpoints to query beacon chain."
+    },
+    {
+        "name": "Consensus Client Config Methods",
+        "description": "Endpoints to query chain configuration, specification, and fork schedules."
+    },
+    {
+        "name": "Consensus Client Node Methods",
+        "description": "Endpoints to query node related informations"
     }
 ]
 
@@ -42,8 +51,8 @@ tags_metadata = [
 execution_client = ExecutionClientConnector(
     config.EXECUTION_CLIENT_IP, config.EXECUTION_CLIENT_PORT)
 
-consensus_client = Beacon(
-    f"http://{config.CONSENCUS_CLIENT_IP}:{config.CONSENSUS_CLIENT_PORT}")
+consensus_client = ConsensusClientConnector(
+    config.CONSENCUS_CLIENT_IP, config.CONSENSUS_CLIENT_PORT)
 
 
 class Token(BaseModel):
@@ -66,6 +75,10 @@ class UserInDB(User):
     hashed_password: str
 
 
+swagger_ui_parameters = {
+    "docExpansion": "none"
+}
+
 app = FastAPI(
     title="Ethereum Blockchain API",
     description="API to query data from the Ethereum blockchain",
@@ -74,7 +87,8 @@ app = FastAPI(
         "name": "Fabian Galm",
         "email": "fabian.galm@students.uni-mannheim.de"
     },
-    openapi_tags=tags_metadata
+    openapi_tags=tags_metadata,
+    swagger_ui_parameters=swagger_ui_parameters
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -176,7 +190,7 @@ async def root():
     return RedirectResponse(url="/docs")
 
 
-# Execution Client Gossip methods
+# Execution Client Gossip Methods
 
 @app.get("/execution_client/block_number", tags=["Execution Client Gossip Methods"])
 async def execution_client_block_number(current_user: User = Depends(get_current_active_user)):
@@ -184,7 +198,7 @@ async def execution_client_block_number(current_user: User = Depends(get_current
     return response
 
 
-# Execution Client State methods
+# Execution Client State Methods
 
 @app.get("/execution_client/default_account", tags=["Execution Client State Methods"])
 async def execution_client_default_account(current_user: User = Depends(get_current_active_user)):
@@ -285,7 +299,7 @@ async def execution_client_estimate_gas(from_addrress: str, to_address: str, val
     return response
 
 
-# Execution Client History methods
+# Execution Client History Methods
 
 @app.get("/execution_client/get_block_transaction_count", tags=["Execution Client History Methods"])
 async def execution_client_get_block_transaction_count(block_identifier: Union[int, str], current_user: User = Depends(get_current_active_user)):
@@ -353,12 +367,168 @@ async def execution_client_get_uncle_by_block(block_identifier: Union[int, str],
     return response
 
 
-# Consensus Client
+# Consensus Client Beacon Methods
 
-@app.get("/consensus_client/get_syncing", tags=["Consensus Client"])
-async def get_consensus_client_syncing(current_user: User = Depends(get_current_active_user)):
+@app.get("/consensus_client/get_genesis", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_genesis(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_genesis()
+    return response
+
+
+@app.get("/consensus_client/get_hash_root", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_hash_root(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_hash_root(state_id)
+    return response
+
+
+@app.get("/consensus_client/get_fork_data", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_fork_data(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_fork_data(state_id)
+    return response
+
+
+@app.get("/consensus_client/get_finality_checkpoint", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_finality_checkpoint(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_finality_checkpoint(state_id)
+    return response
+
+# TODO: not working
+
+
+@app.get("/consensus_client/get_validators", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_validators(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_validators(state_id)
+    return response
+
+
+@app.get("/consensus_client/get_validator", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_validator(validator_id: int, state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_validator(validator_id, state_id)
+    return response
+
+
+@app.get("/consensus_client/get_validator_balances", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_validator_balances(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_validator_balances(state_id)
+    return response
+
+
+@app.get("/consensus_client/get_epoch_committees", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_epoch_committees(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_epoch_committees(state_id)
+    return response
+
+
+@app.get("/consensus_client/get_block_headers", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_block_headers(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_block_headers()
+    return response
+
+
+@app.get("/consensus_client/get_block_header", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_block_header(block_id: int, current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_block_header(block_id)
+    return response
+
+
+@app.get("/consensus_client/get_block", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_block(block_id: int, current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_block(block_id)
+    return response
+
+
+@app.get("/consensus_client/get_block_root", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_block_root(block_id: int, current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_block_root(block_id)
+    return response
+
+
+@app.get("/consensus_client/get_block_attestations", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_block_attestations(block_id: int, current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_block_attestations(block_id)
+    return response
+
+
+@app.get("/consensus_client/get_attestations", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_attestations(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_attestations()
+    return response
+
+
+@app.get("/consensus_client/get_attester_slashings", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_attester_slashings(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_attester_slashings()
+    return response
+
+
+@app.get("/consensus_client/get_proposer_slashings", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_proposer_slashings(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_proposer_slashings()
+    return response
+
+
+@app.get("/consensus_client/get_voluntary_exits", tags=["Consensus Client Beacon Methods"])
+async def consensus_client_get_voluntary_exits(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_voluntary_exits()
+    return response
+
+
+# Consensus Client Config Methods
+
+@app.get("/consensus_client/get_fork_schedule", tags=["Consensus Client Config Methods"])
+async def consensus_client_get_fork_schedule(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_fork_schedule()
+    return response
+
+
+@app.get("/consensus_client/get_spec", tags=["Consensus Client Config Methods"])
+async def consensus_client_get_spec(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_spec()
+    return response
+
+
+@app.get("/consensus_client/get_deposit_contract", tags=["Consensus Client Config Methods"])
+async def consensus_client_get_deposit_contract(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_deposit_contract()
+    return response
+
+
+# Consensus Client Node Methods
+
+@app.get("/consensus_client/get_node_identity", tags=["Consensus Client Node Methods"])
+async def consensus_client_get_node_identity(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_node_identity()
+    return response
+
+
+@app.get("/consensus_client/get_peers", tags=["Consensus Client Node Methods"])
+async def consensus_client_get_peers(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_peers()
+    return response
+
+
+@app.get("/consensus_client/get_peer", tags=["Consensus Client Node Methods"])
+async def consensus_client_get_peer(peer_id: str, current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_peer(peer_id)
+    return response
+
+
+@app.get("/consensus_client/get_health", tags=["Consensus Client Node Methods"])
+async def consensus_client_get_health(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_health()
+    return response
+
+
+@app.get("/consensus_client/get_version", tags=["Consensus Client Node Methods"])
+async def consensus_client_get_version(current_user: User = Depends(get_current_active_user)):
+    response = consensus_client.get_version()
+    return response
+
+
+@app.get("/consensus_client/get_syncing", tags=["Consensus Client Node Methods"])
+async def consensus_client_get_syncing(current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_syncing()
-    return response["data"]
+    return response
 
 
 # Other Routes
