@@ -158,7 +158,7 @@ async def swagger_ui_html(req: Request) -> HTMLResponse:
 
 
 @app.get("/redoc", include_in_schema=False)
-async def overridden_redoc():
+async def redoc_ui_html():
     return get_redoc_html(
         openapi_url="/openapi.json",
         title=api_metadata.API_TITLE,
