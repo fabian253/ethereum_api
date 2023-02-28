@@ -14,7 +14,7 @@ class ExecutionClientConnector:
 
     # Gossip methods
 
-    def get_block_number(self):
+    def block_number(self):
         response = self.execution_client.eth.block_number
 
         return {"block_number": response}
@@ -64,15 +64,10 @@ class ExecutionClientConnector:
 
         return {"accounts": response}
 
-    def protocol_version(self):
-        response = self.execution_client.eth.protocol_version
-
-        return {"protocol_version": response}
-
     def chain_id(self):
         response = self.execution_client.eth.chain_id
 
-        return {"chain_id", response}
+        return {"chain_id": response}
 
     def get_api_version(self):
         response = self.execution_client.api
@@ -85,6 +80,8 @@ class ExecutionClientConnector:
         return {"client_version": response}
 
     def get_balance(self, wallet_address, block_identifier=None):
+        wallet_address = Web3.toChecksumAddress(wallet_address)
+
         if block_identifier is None:
             response = self.execution_client.eth.get_balance(wallet_address)
         else:
@@ -99,6 +96,8 @@ class ExecutionClientConnector:
         return {"block_number": response}
 
     def get_storage_at(self, wallet_address, position, block_identifier=None):
+        wallet_address = Web3.toChecksumAddress(wallet_address)
+
         if block_identifier is None:
             response = self.execution_client.eth.get_storage_at(
                 wallet_address, position)
@@ -108,22 +107,16 @@ class ExecutionClientConnector:
 
         return {"storage_value": response}
 
-    def get_proof(self, wallet_address, positions, block_identifier=None):
-        if block_identifier is None:
-            response = self.execution_client.eth.get_proof(
-                wallet_address, positions)
-        else:
-            response = self.execution_client.eth.get_proof(
-                wallet_address, positions, block_identifier)
-
-        return json.loads(Web3.toJSON(response))
-
     def get_code(self, wallet_address):
+        wallet_address = Web3.toChecksumAddress(wallet_address)
+
         response = self.execution_client.eth.get_code(wallet_address)
 
         return {"bytecode": response}
 
     def get_transaction_count(self, wallet_address, block_identifier=None):
+        wallet_address = Web3.toChecksumAddress(wallet_address)
+
         if block_identifier is None:
             response = self.execution_client.eth.get_transaction_count(
                 wallet_address)
@@ -131,9 +124,12 @@ class ExecutionClientConnector:
             response = self.execution_client.eth.get_transaction_count(
                 wallet_address, block_identifier)
 
-        return json.loads(Web3.toJSON(response))
+        return {"transaction_count": response}
 
     def estimate_gas(self, from_address, to_address, value):
+        from_address = Web3.toChecksumAddress(from_address)
+        to_address = Web3.toChecksumAddress(to_address)
+
         response = self.execution_client.eth.estimate_gas({
             "to": to_address,
             "from": from_address,
