@@ -1,14 +1,16 @@
 from datetime import datetime, timedelta
 from typing import Union
 
-from fastapi import Depends, FastAPI, HTTPException, status, Request
+from fastapi import Depends, FastAPI, HTTPException, status, Request, Query
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from app.api_metadata.api_datamodels import *
+from app.api_metadata.api_data_models import *
+from app.api_metadata.api_response_models import *
+from app.api_metadata.api_query_parameters import *
 import app.api_metadata.api_metadata as api_metadata
 
 import app.config as config
@@ -237,8 +239,14 @@ async def execution_client_get_client_version(current_user: User = Depends(get_c
     return response
 
 
-@app.get("/execution_client/get_balance", tags=["Execution Client State Methods"])
-async def execution_client_get_balance(wallet_address: str, block_identifier: Union[int, None] = None, current_user: User = Depends(get_current_active_user)):
+@app.get("/execution_client/get_balance", tags=["Execution Client State Methods"], response_model=ExecutionClientGetBalanceResponseModel)
+async def execution_client_get_balance(
+        wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
+        block_identifier: Union[int, None] = BLOCK_IDENTIFIER_QUERY_PARAMETER,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Returns the balance of the account of given address.
+    """
     response = execution_client.get_balance(wallet_address, block_identifier)
     return response
 
@@ -249,42 +257,62 @@ async def execution_client_get_block_number(current_user: User = Depends(get_cur
     return response
 
 
-@app.get("/execution_client/get_storage_at", tags=["Execution Client State Methods"])
-async def execution_client_get_storage_at(wallet_address: str, position: int, block_identifier: Union[int, None] = None, current_user: User = Depends(get_current_active_user)):
+@app.get("/execution_client/get_storage_at", tags=["Execution Client State Methods"], response_model=ExecutionClientGetStorageAtResponseModel)
+async def execution_client_get_storage_at(
+        wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
+        position: int = POSITION_QUERY_PARAMETER,
+        block_identifier: Union[int, None] = BLOCK_IDENTIFIER_QUERY_PARAMETER,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Returns the value from a storage position at a given address.
+    """
     response = execution_client.get_storage_at(
         wallet_address, position, block_identifier)
     return response
 
 
 @app.get("/execution_client/get_code", tags=["Execution Client State Methods"])
-async def execution_client_get_code(wallet_address: str, current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_code(
+        wallet_address: str,
+        current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_code(wallet_address)
     return response
 
 
 @app.get("/execution_client/get_transaction_count", tags=["Execution Client State Methods"])
-async def execution_client_get_transaction_count(wallet_address: str, block_identifier: Union[int, None] = None, current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_transaction_count(
+        wallet_address: str,
+        block_identifier: Union[int, None] = None,
+        current_user: User = Depends(get_current_active_user)):
     reponse = execution_client.get_transaction_count(
         wallet_address, block_identifier)
     return reponse
 
 
 @app.get("/execution_client/estimate_gas", tags=["Execution Client State Methods"])
-async def execution_client_estimate_gas(from_addrress: str, to_address: str, value: int,  current_user: User = Depends(get_current_active_user)):
-    response = execution_client.estimate_gas(from_addrress, to_address, value)
+async def execution_client_estimate_gas(
+        from_address: str,
+        to_address: str,
+        value: int,
+        current_user: User = Depends(get_current_active_user)):
+    response = execution_client.estimate_gas(from_address, to_address, value)
     return response
 
 
 # Execution Client History Methods
 
 @app.get("/execution_client/get_block_transaction_count", tags=["Execution Client History Methods"])
-async def execution_client_get_block_transaction_count(block_identifier: Union[int, str], current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_block_transaction_count(
+        block_identifier: Union[int, str],
+        current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_block_transaction_count(block_identifier)
     return response
 
 
 @app.get("/execution_client/get_uncle_count", tags=["Execution Client History Methods"])
-async def execution_client_get_uncle_count(block_identifier: Union[int, str], current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_uncle_count(
+        block_identifier: Union[int, str],
+        current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_uncle_count(block_identifier)
 
     if response is None:
@@ -297,7 +325,10 @@ async def execution_client_get_uncle_count(block_identifier: Union[int, str], cu
 
 
 @app.get("/execution_client/get_block", tags=["Execution Client History Methods"])
-async def execution_client_get_block(block_identifier: Union[int, str, None] = None, full_transactions: bool = False,  current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_block(
+        block_identifier: Union[int, str, None] = None,
+        full_transactions: bool = False,
+        current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_block(block_identifier, full_transactions)
 
     if response is None:
@@ -310,7 +341,10 @@ async def execution_client_get_block(block_identifier: Union[int, str, None] = N
 
 
 @app.get("/execution_client/get_transaction_by_block", tags=["Execution Client History Methods"])
-async def execution_client_get_transaction_by_block(block_identifier: Union[int, str], transaction_index: int, current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_transaction_by_block(
+        block_identifier: Union[int, str],
+        transaction_index: int,
+        current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_transaction_by_block(
         block_identifier, transaction_index)
 
@@ -324,13 +358,18 @@ async def execution_client_get_transaction_by_block(block_identifier: Union[int,
 
 
 @app.get("/execution_client/get_transaction_receipt", tags=["Execution Client History Methods"])
-async def execution_client_get_transaction_receipt(transaction_hash: str, current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_transaction_receipt(
+        transaction_hash: str,
+        current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_transaction_receipt(transaction_hash)
     return response
 
 
 @app.get("/execution_client/get_uncle_by_block", tags=["Execution Client History Methods"])
-async def execution_client_get_uncle_by_block(block_identifier: Union[int, str], uncle_index: int, current_user: User = Depends(get_current_active_user)):
+async def execution_client_get_uncle_by_block(
+        block_identifier: Union[int, str],
+        uncle_index: int,
+        current_user: User = Depends(get_current_active_user)):
     response = execution_client.get_uncle_by_block(
         block_identifier, uncle_index)
 
@@ -352,19 +391,25 @@ async def consensus_client_get_genesis(current_user: User = Depends(get_current_
 
 
 @app.get("/consensus_client/get_hash_root", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_hash_root(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_hash_root(
+        state_id: str = "head",
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_hash_root(state_id)
     return response
 
 
 @app.get("/consensus_client/get_fork_data", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_fork_data(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_fork_data(
+        state_id: str = "head",
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_fork_data(state_id)
     return response
 
 
 @app.get("/consensus_client/get_finality_checkpoint", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_finality_checkpoint(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_finality_checkpoint(
+        state_id: str = "head",
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_finality_checkpoint(state_id)
     return response
 
@@ -372,25 +417,34 @@ async def consensus_client_get_finality_checkpoint(state_id: str = "head", curre
 
 
 @app.get("/consensus_client/get_validators", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_validators(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_validators(
+        state_id: str = "head",
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_validators(state_id)
     return response
 
 
 @app.get("/consensus_client/get_validator", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_validator(validator_id: int, state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_validator(
+        validator_id: int,
+        state_id: str = "head",
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_validator(validator_id, state_id)
     return response
 
 
 @app.get("/consensus_client/get_validator_balances", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_validator_balances(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_validator_balances(
+        state_id: str = "head",
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_validator_balances(state_id)
     return response
 
 
 @app.get("/consensus_client/get_epoch_committees", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_epoch_committees(state_id: str = "head", current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_epoch_committees(
+        state_id: str = "head",
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_epoch_committees(state_id)
     return response
 
@@ -402,25 +456,33 @@ async def consensus_client_get_block_headers(current_user: User = Depends(get_cu
 
 
 @app.get("/consensus_client/get_block_header", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_block_header(block_id: int, current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_block_header(
+        block_id: int,
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_block_header(block_id)
     return response
 
 
 @app.get("/consensus_client/get_block", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_block(block_id: int, current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_block(
+        block_id: int,
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_block(block_id)
     return response
 
 
 @app.get("/consensus_client/get_block_root", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_block_root(block_id: int, current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_block_root(
+        block_id: int,
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_block_root(block_id)
     return response
 
 
 @app.get("/consensus_client/get_block_attestations", tags=["Consensus Client Beacon Methods"])
-async def consensus_client_get_block_attestations(block_id: int, current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_block_attestations(
+        block_id: int,
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_block_attestations(block_id)
     return response
 
@@ -484,7 +546,9 @@ async def consensus_client_get_peers(current_user: User = Depends(get_current_ac
 
 
 @app.get("/consensus_client/get_peer", tags=["Consensus Client Node Methods"])
-async def consensus_client_get_peer(peer_id: str, current_user: User = Depends(get_current_active_user)):
+async def consensus_client_get_peer(
+        peer_id: str,
+        current_user: User = Depends(get_current_active_user)):
     response = consensus_client.get_peer(peer_id)
     return response
 
