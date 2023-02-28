@@ -1,5 +1,7 @@
 API_TITLE = "Ethereum Blockchain API"
-API_DESCIPTION = "API to query data from the Ethereum blockchain"
+API_DESCIPTION = """
+API to query data from the Ethereum blockchain
+"""
 API_VERSION = "0.0.1"
 API_CONTACT_NAME = "Fabian Galm"
 API_CONTACT_EMAIL = "fabian.galm@students.uni-mannheim.de"
