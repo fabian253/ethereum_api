@@ -1,52 +1,21 @@
 from datetime import datetime, timedelta
 from typing import Union
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.responses import RedirectResponse
+from fastapi import Depends, FastAPI, HTTPException, status, Request
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
-from web3.beacon.main import Beacon
+from app.api_metadata.api_datamodels import *
+import app.api_metadata.api_metadata as api_metadata
 
 import app.config as config
 from app.execution_client_connector import ExecutionClientConnector
 from app.consensus_client_connector import ConsensusClientConnector
 from app.users_db import users_db
 
-tags_metadata = [
-    {
-        "name": "Authentication and Users",
-        "description": "Endpoints for authentication and user information."
-    },
-    {
-        "name": "Execution Client Gossip Methods",
-        "description": "These methods track the head of the chain. This is how transactions make their way around the network, find their way into blocks, and how clients find out about new blocks."
-    },
-    {
-        "name": "Execution Client State Methods",
-        "description": "Methods that report the current state of all the data stored. The 'state' is like one big shared piece of RAM, and includes account balances, contract data, and gas estimations."
-    },
-    {
-        "name": "Execution Client History Methods",
-        "description": "Fetches historical records of every block back to genesis. This is like one large append-only file, and includes all block headers, block bodies, uncle blocks, and transaction receipts."
-    },
-    {
-        "name": "Consensus Client Beacon Methods",
-        "description": "Set of endpoints to query beacon chain."
-    },
-    {
-        "name": "Consensus Client Config Methods",
-        "description": "Endpoints to query chain configuration, specification, and fork schedules."
-    },
-    {
-        "name": "Consensus Client Node Methods",
-        "description": "Endpoints to query node related informations"
-    }
-]
-
-# execution_client = Web3(Web3.HTTPProvider(
-#    f"http://{config.EXECUTION_CLIENT_IP}:{config.EXECUTION_CLIENT_PORT}"))
 
 execution_client = ExecutionClientConnector(
     config.EXECUTION_CLIENT_IP, config.EXECUTION_CLIENT_PORT)
@@ -55,41 +24,19 @@ consensus_client = ConsensusClientConnector(
     config.CONSENCUS_CLIENT_IP, config.CONSENSUS_CLIENT_PORT)
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: Union[str, None] = None
-
-
-class User(BaseModel):
-    username: str
-    email: Union[str, None] = None
-    full_name: Union[str, None] = None
-    disabled: Union[bool, None] = None
-
-
-class UserInDB(User):
-    hashed_password: str
-
-
-swagger_ui_parameters = {
-    "docExpansion": "none"
-}
-
 app = FastAPI(
-    title="Ethereum Blockchain API",
-    description="API to query data from the Ethereum blockchain",
-    version="0.0.1",
+    title=api_metadata.API_TITLE,
+    description=api_metadata.API_DESCIPTION,
+    version=api_metadata.API_VERSION,
     contact={
-        "name": "Fabian Galm",
-        "email": "fabian.galm@students.uni-mannheim.de"
+        "name": api_metadata.API_CONTACT_NAME,
+        "email": api_metadata.API_CONTACT_EMAIL
     },
-    openapi_tags=tags_metadata,
-    swagger_ui_parameters=swagger_ui_parameters
+    openapi_tags=api_metadata.API_TAGS_METADATA,
+    docs_url=None,
+    redoc_url=None
 )
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -188,6 +135,35 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 @app.get("/", include_in_schema=False)
 async def root():
     return RedirectResponse(url="/docs")
+
+
+# Docs
+
+@app.get("/docs", include_in_schema=False)
+async def swagger_ui_html(req: Request) -> HTMLResponse:
+    root_path = req.scope.get("root_path", "").rstrip("/")
+    openapi_url = root_path + app.openapi_url
+    oauth2_redirect_url = app.swagger_ui_oauth2_redirect_url
+    if oauth2_redirect_url:
+        oauth2_redirect_url = root_path + oauth2_redirect_url
+
+    return get_swagger_ui_html(
+        openapi_url=openapi_url,
+        title=api_metadata.API_TITLE,
+        oauth2_redirect_url=oauth2_redirect_url,
+        init_oauth=app.swagger_ui_init_oauth,
+        swagger_favicon_url="/static/favicon.ico",
+        swagger_ui_parameters=api_metadata.API_SWAGGER_UI_PARAMETERS
+    )
+
+
+@app.get("/redoc", include_in_schema=False)
+async def overridden_redoc():
+    return get_redoc_html(
+        openapi_url="/openapi.json",
+        title=api_metadata.API_TITLE,
+        redoc_favicon_url="/static/favicon.ico"
+    )
 
 
 # Execution Client Gossip Methods
