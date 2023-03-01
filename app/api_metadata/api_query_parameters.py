@@ -1,5 +1,8 @@
 from fastapi import Query
 
+
+# Execution Client
+
 WALLET_ADDRESS_QUERY_PARAMETER = Query(title="Wallet address", description="Address to check for balance",
                                        example="0x165CD37b4C644C2921454429E7F9358d18A45e14")
 
@@ -35,6 +38,9 @@ TRANSACTION_HASH_QUERY_PARAMETER = Query(title="Transaction Hash", description="
 
 UNCLE_INDEX_QUERY_PARAMETER = Query(
     title="Uncle Index", description="Index of the uncle", example=0)
+
+
+# Consensus Client
 
 STATE_ID_QUERY_PARAMETER = Query(
     title="State ID",
