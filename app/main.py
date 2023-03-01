@@ -184,7 +184,7 @@ async def execution_client_block_number(current_user: User = Depends(get_current
 @app.get("/execution_client/default_account", tags=["Execution Client State Methods"], response_model=ExecutionClientResponseModelDefaultAccount)
 async def execution_client_default_account(current_user: User = Depends(get_current_active_user)):
     """
-    Returns the ethereum address that will be used as the default from address for all transactions. 
+    Returns the ethereum address that will be used as the default from address for all transactions.
 
     Defaults to empty.
     """
@@ -195,7 +195,7 @@ async def execution_client_default_account(current_user: User = Depends(get_curr
 @app.get("/execution_client/default_block", tags=["Execution Client State Methods"], response_model=ExecutionClientResponseModelDefaultBlock)
 async def execution_client_default_block(current_user: User = Depends(get_current_active_user)):
     """
-    Returns the default block number that will be used for any RPC methods that accept a block identifier. 
+    Returns the default block number that will be used for any RPC methods that accept a block identifier.
 
     Defaults to 'latest'.
     """
@@ -203,12 +203,11 @@ async def execution_client_default_block(current_user: User = Depends(get_curren
     return response
 
 
-@app.get("/execution_client/syncing", tags=["Execution Client State Methods"], response_model=ExecutionClientResponseModelSyncing)
+@app.get("/execution_client/syncing", tags=["Execution Client State Methods"], response_model=Union[ExecutionClientResponseModelSyncingTrue, ExecutionClientResponseModelSyncingFalse])
 async def execution_client_syncing(current_user: User = Depends(get_current_active_user)):
     """
     Returns either False if the node is not syncing or a dictionary showing sync status.
     """
-    # TODO: include second response model if node is not syncing
     response = execution_client.syncing()
     return response
 
@@ -256,7 +255,6 @@ async def execution_client_chain_id(current_user: User = Depends(get_current_act
 
     Returns None if no Chain Id is available.
     """
-    # TODO: add None into response model
     response = execution_client.chain_id()
 
     return response
@@ -328,7 +326,7 @@ async def execution_client_get_code(
     """
     Returns the bytecode for the given wallet_address at the block specified by block_identifier.
 
-    wallet_address may be a checksum address or an ENS name    
+    wallet_address may be a checksum address or an ENS name
     """
     response = execution_client.get_code(wallet_address)
     return response
@@ -368,29 +366,39 @@ async def execution_client_estimate_gas(
 
 # Execution Client History Methods
 
-@app.get("/execution_client/get_block_transaction_count", tags=["Execution Client History Methods"], response_model=ExecutionClientResponseModelGetBlockTransactionCount)
+@app.get("/execution_client/get_block_transaction_count",
+         tags=["Execution Client History Methods"],
+         responses={200: {"model": ExecutionClientResponseModelGetBlockTransactionCount}, 400: {"model": ErrorResponseModel}})
 async def execution_client_get_block_transaction_count(
         block_identifier: Union[int, str] = BLOCK_IDENTIFIER_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the number of transactions in the block specified by block_identifier. 
-    Delegates to eth_getBlockTransactionCountByNumber if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized', otherwise delegates to eth_getBlockTransactionCountByHash. 
+    Returns the number of transactions in the block specified by block_identifier.
+    Delegates to eth_getBlockTransactionCountByNumber if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized', otherwise delegates to eth_getBlockTransactionCountByHash.
 
     Throws BlockNotFoundError if transactions are not found.
     """
-    # TODO: add error for block not found
     response = execution_client.get_block_transaction_count(block_identifier)
+
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Block not found (block_identifier: {block_identifier})"
+        )
+
     return response
 
 
-@app.get("/execution_client/get_uncle_count", tags=["Execution Client History Methods"], response_model=ExecutionClientResponseModelGetUncleCount)
+@app.get("/execution_client/get_uncle_count",
+         tags=["Execution Client History Methods"],
+         responses={200: {"model": ExecutionClientResponseModelGetUncleCount}, 400: {"model": ErrorResponseModel}})
 async def execution_client_get_uncle_count(
         block_identifier: Union[int,
                                 str] = BLOCK_IDENTIFIER_UNCLE_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the (integer) number of uncles associated with the block specified by block_identifier. 
-    Delegates to eth_getUncleCountByBlockNumber if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', otherwise delegates to eth_getUncleCountByBlockHash. 
+    Returns the (integer) number of uncles associated with the block specified by block_identifier.
+    Delegates to eth_getUncleCountByBlockNumber if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', otherwise delegates to eth_getUncleCountByBlockHash.
 
     Throws BlockNotFound if the block is not found.
     """
@@ -405,23 +413,23 @@ async def execution_client_get_uncle_count(
     return response
 
 
-@app.get("/execution_client/get_block", tags=["Execution Client History Methods"], response_model=Union[ExecutionClientResponseModelGetBlockFalse, ExecutionClientResponseModelGetBlockTrue])
+@app.get("/execution_client/get_block",
+         tags=["Execution Client History Methods"],
+         responses={200: {"model": Union[ExecutionClientResponseModelGetBlockFalse, ExecutionClientResponseModelGetBlockTrue]}, 400: {"model": ErrorResponseModel}})
 async def execution_client_get_block(
         block_identifier: Union[int, str,
                                 None] = BLOCK_IDENTIFIER_OPTIONAL_QUERY_PARAMETER,
         full_transactions: bool = FULL_TRANSACTION_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the block specified by block_identifier. 
-    Delegates to eth_getBlockByNumber if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized' - otherwise delegates to eth_getBlockByHash. 
+    Returns the block specified by block_identifier.
+    Delegates to eth_getBlockByNumber if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized' - otherwise delegates to eth_getBlockByHash.
 
     Throws BlockNotFound error if the block is not found.
 
     If full_transactions is True then the 'transactions' key will contain full transactions objects. Otherwise it will be an array of transaction hashes.
     """
     response = execution_client.get_block(block_identifier, full_transactions)
-
-    print(response)
 
     if response is None:
         raise HTTPException(
@@ -432,14 +440,16 @@ async def execution_client_get_block(
     return response
 
 
-@app.get("/execution_client/get_transaction_by_block", tags=["Execution Client History Methods"], response_model=ExecutionClientResponseModelGetTransactionByBlock)
+@app.get("/execution_client/get_transaction_by_block",
+         tags=["Execution Client History Methods"],
+         responses={200: {"model": ExecutionClientResponseModelGetTransactionByBlock}, 400: {"model": ErrorResponseModel}})
 async def execution_client_get_transaction_by_block(
         block_identifier: Union[int, str] = BLOCK_IDENTIFIER_QUERY_PARAMETER,
         transaction_index: int = TRANSACTION_INDEX_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the transaction at the index specified by transaction_index from the block specified by block_identifier. 
-    Delegates to eth_getTransactionByBlockNumberAndIndex if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized', otherwise delegates to eth_getTransactionByBlockHashAndIndex. 
+    Returns the transaction at the index specified by transaction_index from the block specified by block_identifier.
+    Delegates to eth_getTransactionByBlockNumberAndIndex if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', 'safe', 'finalized', otherwise delegates to eth_getTransactionByBlockHashAndIndex.
 
     Throws TransactionNotFound if a transaction is not found at specified arguments.
     """
@@ -455,31 +465,41 @@ async def execution_client_get_transaction_by_block(
     return response
 
 
-@app.get("/execution_client/get_transaction_receipt", tags=["Execution Client History Methods"], response_model=ExecutionClientResponseModelGetTransactionReceipt)
+@ app.get("/execution_client/get_transaction_receipt",
+          tags=["Execution Client History Methods"],
+          responses={200: {"model": ExecutionClientResponseModelGetTransactionReceipt}, 400: {"model": ErrorResponseModel}})
 async def execution_client_get_transaction_receipt(
         transaction_hash: str = TRANSACTION_HASH_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the transaction receipt specified by transaction_hash. 
+    Returns the transaction receipt specified by transaction_hash.
 
     Throws TransactionNotFound if a transaction cannot be found.
 
     If status in response equals 1 the transaction was successful. If it is equals 0 the transaction was reverted by EVM.
     """
-    # TODO: Add exception
     response = execution_client.get_transaction_receipt(transaction_hash)
+
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transaction not found (transaction_hash: {transaction_hash})"
+        )
+
     return response
 
 
-@app.get("/execution_client/get_uncle_by_block", tags=["Execution Client History Methods"], response_model=ExecutionClientResponseModelGetUncleByBlock)
+@ app.get("/execution_client/get_uncle_by_block",
+          tags=["Execution Client History Methods"],
+          responses={200: {"model": ExecutionClientResponseModelGetUncleByBlock}, 400: {"model": ErrorResponseModel}})
 async def execution_client_get_uncle_by_block(
         block_identifier: Union[int,
                                 str] = BLOCK_IDENTIFIER_UNCLE_QUERY_PARAMETER,
         uncle_index: int = UNCLE_INDEX_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the uncle at the index specified by uncle_index from the block specified by block_identifier. 
-    Delegates to eth_getUncleByBlockNumberAndIndex if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', otherwise delegates to eth_getUncleByBlockHashAndIndex. 
+    Returns the uncle at the index specified by uncle_index from the block specified by block_identifier.
+    Delegates to eth_getUncleByBlockNumberAndIndex if block_identifier is an integer or one of the predefined block parameters 'latest', 'earliest', 'pending', otherwise delegates to eth_getUncleByBlockHashAndIndex.
 
     Throws BlockNotFound if the block is not found.
     """
@@ -497,188 +517,281 @@ async def execution_client_get_uncle_by_block(
 
 # Consensus Client Beacon Methods
 
-@app.get("/consensus_client/get_genesis", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_genesis", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetGenesis)
 async def consensus_client_get_genesis(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieve details of the chain's genesis which can be used to identify chain.
+    """
     response = consensus_client.get_genesis()
     return response
 
 
-@app.get("/consensus_client/get_hash_root", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_hash_root", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetHashRoot)
 async def consensus_client_get_hash_root(
         state_id: str = "head",
         current_user: User = Depends(get_current_active_user)):
+    """
+    Calculates HashTreeRoot for state with given 'stateId'. If stateId is root, same value will be returned.
+    """
     response = consensus_client.get_hash_root(state_id)
     return response
 
 
-@app.get("/consensus_client/get_fork_data", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_fork_data", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetForkData)
 async def consensus_client_get_fork_data(
         state_id: str = "head",
         current_user: User = Depends(get_current_active_user)):
+    """
+    Returns Fork object for state with given 'stateId'.
+    """
     response = consensus_client.get_fork_data(state_id)
     return response
 
 
-@app.get("/consensus_client/get_finality_checkpoint", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_finality_checkpoint", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetFinalityCheckpoint)
 async def consensus_client_get_finality_checkpoint(
         state_id: str = "head",
         current_user: User = Depends(get_current_active_user)):
+    """
+    Returns finality checkpoints for state with given 'stateId'. In case finality is not yet achieved, checkpoint should return epoch 0 and ZERO_HASH as root.
+    """
     response = consensus_client.get_finality_checkpoint(state_id)
     return response
 
 
-@app.get("/consensus_client/get_validators", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_validators", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetValidators)
 async def consensus_client_get_validators(
-        state_id: str = "head",
+        state_id: str = STATE_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Returns filterable list of validators with their balance, status and index.
+
+    Information will be returned for all indices or public key that match known validators. If an index or public key does not match any known validator, no information will be returned but this will not cause an error. There are no guarantees for the returned data in terms of ordering; both the index and public key are returned for each validator, and can be used to confirm for which inputs a response has been returned.
+    """
     # TODO: not working
     response = consensus_client.get_validators(state_id)
     return response
 
 
-@app.get("/consensus_client/get_validator", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_validator", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetValidator)
 async def consensus_client_get_validator(
-        validator_id: int,
-        state_id: str = "head",
+        validator_id: int = VALIDATOR_ID_QUERY_PARAMETER,
+        state_id: str = STATE_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Returns validator specified by state and id or public key along with status and balance.
+    """
     response = consensus_client.get_validator(validator_id, state_id)
     return response
 
 
-@app.get("/consensus_client/get_validator_balances", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_validator_balances", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetValidatorBalances)
 async def consensus_client_get_validator_balances(
-        state_id: str = "head",
+        state_id: str = STATE_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Returns filterable list of validators balances.
+
+    Balances will be returned for all indices or public key that match known validators. If an index or public key does not match any known validator, no balance will be returned but this will not cause an error. There are no guarantees for the returned data in terms of ordering; the index and is returned for each balance, and can be used to confirm for which inputs a response has been returned.
+    """
     response = consensus_client.get_validator_balances(state_id)
     return response
 
 
-@app.get("/consensus_client/get_epoch_committees", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_epoch_committees", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetEpochCommittees)
 async def consensus_client_get_epoch_committees(
-        state_id: str = "head",
+        state_id: str = STATE_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves the committees for the given state.
+    """
     response = consensus_client.get_epoch_committees(state_id)
     return response
 
 
-@app.get("/consensus_client/get_block_headers", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_block_headers", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetBlockHeaders)
 async def consensus_client_get_block_headers(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves block headers matching given query. By default it will fetch current head slot blocks.
+    """
     response = consensus_client.get_block_headers()
     return response
 
 
-@app.get("/consensus_client/get_block_header", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_block_header", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetBlockHeader)
 async def consensus_client_get_block_header(
-        block_id: int,
+        block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves block header for given block id.
+    """
     response = consensus_client.get_block_header(block_id)
     return response
 
 
-@app.get("/consensus_client/get_block", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_block", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetBlock)
 async def consensus_client_get_block(
-        block_id: int,
+        block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves block details for given block id. Depending on Accept header it can be returned either as json or as bytes serialized by SSZ
+    """
     response = consensus_client.get_block(block_id)
     return response
 
 
-@app.get("/consensus_client/get_block_root", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_block_root", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetBlockRoot)
 async def consensus_client_get_block_root(
-        block_id: int,
+        block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves hashTreeRoot of BeaconBlock/BeaconBlockHeader
+    """
     response = consensus_client.get_block_root(block_id)
     return response
 
 
-@app.get("/consensus_client/get_block_attestations", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_block_attestations", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetBlockAttestations)
 async def consensus_client_get_block_attestations(
-        block_id: int,
+        block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves attestation included in requested block.
+    """
     response = consensus_client.get_block_attestations(block_id)
     return response
 
 
-@app.get("/consensus_client/get_attestations", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_attestations", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetAttestations)
 async def consensus_client_get_attestations(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves attestations known by the node but not necessarily incorporated into any block
+    """
+    # TODO: not working yet (empty response)
     response = consensus_client.get_attestations()
     return response
 
 
-@app.get("/consensus_client/get_attester_slashings", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_attester_slashings", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetAttesterSlashings)
 async def consensus_client_get_attester_slashings(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves attester slashings known by the node but not necessarily incorporated into any block
+    """
+    # TODO: not working yet (empty response)
     response = consensus_client.get_attester_slashings()
     return response
 
 
-@app.get("/consensus_client/get_proposer_slashings", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_proposer_slashings", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetProposerSlashings)
 async def consensus_client_get_proposer_slashings(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves proposer slashings known by the node but not necessarily incorporated into any block
+    """
+    # TODO: not working yet (empty response)
     response = consensus_client.get_proposer_slashings()
     return response
 
 
-@app.get("/consensus_client/get_voluntary_exits", tags=["Consensus Client Beacon Methods"])
+@ app.get("/consensus_client/get_voluntary_exits", tags=["Consensus Client Beacon Methods"], response_model=ConsensusClientResponseModelGetVoluntaryExists)
 async def consensus_client_get_voluntary_exits(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves voluntary exits known by the node but not necessarily incorporated into any block
+    """
+    # TODO: not working yet (empty response)
     response = consensus_client.get_voluntary_exits()
     return response
 
 
 # Consensus Client Config Methods
 
-@app.get("/consensus_client/get_fork_schedule", tags=["Consensus Client Config Methods"])
+@ app.get("/consensus_client/get_fork_schedule", tags=["Consensus Client Config Methods"], response_model=ConsensusClientResponseModelGetForkSchedule)
 async def consensus_client_get_fork_schedule(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieve all forks, past present and future, of which this node is aware.
+    """
     response = consensus_client.get_fork_schedule()
     return response
 
 
-@app.get("/consensus_client/get_spec", tags=["Consensus Client Config Methods"])
+@ app.get("/consensus_client/get_spec", tags=["Consensus Client Config Methods"], response_model=ConsensusClientResponseModelGetSpec)
 async def consensus_client_get_spec(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieve specification configuration used on this node. The configuration should include:
+    * Constants for all hard forks known by the beacon node, for example the phase 0 and altair values
+    * Presets for all hard forks supplied to the beacon node, for example the phase 0 and altair values
+    * Configuration for the beacon node, for example the mainnet values
+
+    Values are returned with following format:
+    * any value starting with 0x in the spec is returned as a hex string
+    * numeric values are returned as a quoted integer
+    """
     response = consensus_client.get_spec()
     return response
 
 
-@app.get("/consensus_client/get_deposit_contract", tags=["Consensus Client Config Methods"])
+@ app.get("/consensus_client/get_deposit_contract", tags=["Consensus Client Config Methods"], response_model=ConsensusClientResponseModelGetDepositContract)
 async def consensus_client_get_deposit_contract(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieve Eth1 deposit contract address and chain ID.
+    """
     response = consensus_client.get_deposit_contract()
     return response
 
 
 # Consensus Client Node Methods
 
-@app.get("/consensus_client/get_node_identity", tags=["Consensus Client Node Methods"])
+@ app.get("/consensus_client/get_node_identity", tags=["Consensus Client Node Methods"], response_model=ConsensusClientResponseModelGetNodeIdentity)
 async def consensus_client_get_node_identity(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves data about the node's network presence
+    """
     response = consensus_client.get_node_identity()
     return response
 
 
-@app.get("/consensus_client/get_peers", tags=["Consensus Client Node Methods"])
+@ app.get("/consensus_client/get_peers", tags=["Consensus Client Node Methods"], response_model=ConsensusClientResponseModelGetPeers)
 async def consensus_client_get_peers(current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves data about the node's network peers. By default this returns all peers.
+    """
     response = consensus_client.get_peers()
     return response
 
 
-@app.get("/consensus_client/get_peer", tags=["Consensus Client Node Methods"])
+@ app.get("/consensus_client/get_peer", tags=["Consensus Client Node Methods"], response_model=ConsensusClientResponseModelGetPeer)
 async def consensus_client_get_peer(
-        peer_id: str,
+        peer_id: str = PEER_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
+    """
+    Retrieves data about the given peer
+    """
     response = consensus_client.get_peer(peer_id)
     return response
 
 
-@app.get("/consensus_client/get_health", tags=["Consensus Client Node Methods"])
+@ app.get("/consensus_client/get_health", tags=["Consensus Client Node Methods"], response_model=ConsensusClientResponseModelGetHealth)
 async def consensus_client_get_health(current_user: User = Depends(get_current_active_user)):
+    """
+    Returns node health status in http status codes. Useful for load balancers.
+    """
     response = consensus_client.get_health()
     return response
 
 
-@app.get("/consensus_client/get_version", tags=["Consensus Client Node Methods"])
+@ app.get("/consensus_client/get_version", tags=["Consensus Client Node Methods"], response_model=ConsensusClientResponseModelGetVersion)
 async def consensus_client_get_version(current_user: User = Depends(get_current_active_user)):
+    """
+    Requests that the beacon node identify information about its implementation in a format similar to a HTTP User-Agent field.
+    """
     response = consensus_client.get_version()
     return response
 
 
-@app.get("/consensus_client/get_syncing", tags=["Consensus Client Node Methods"])
+@ app.get("/consensus_client/get_syncing", tags=["Consensus Client Node Methods"], response_model=ConsensusClientResponseModelGetSyncing)
 async def consensus_client_get_syncing(current_user: User = Depends(get_current_active_user)):
+    """
+    Requests the beacon node to describe if it's currently syncing or not, and if it is, what block it is up to.
+    """
     response = consensus_client.get_syncing()
     return response
 
@@ -686,7 +799,7 @@ async def consensus_client_get_syncing(current_user: User = Depends(get_current_
 # Other Routes
 
 # catch all unknown routes
-@app.route("/{full_path:path}")
+@ app.route("/{full_path:path}")
 async def catch_all_unknown_routes(full_path: str):
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
