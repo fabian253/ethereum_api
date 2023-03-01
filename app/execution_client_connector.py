@@ -145,8 +145,11 @@ class ExecutionClientConnector:
     # History methods
 
     def get_block_transaction_count(self, block_identifier):
-        response = self.execution_client.eth.get_block_transaction_count(
-            block_identifier)
+        try:
+            response = self.execution_client.eth.get_block_transaction_count(
+                block_identifier)
+        except (BlockNotFound, ValueError):
+            return None
 
         return {"block_transaction_count": response}
 
@@ -154,7 +157,7 @@ class ExecutionClientConnector:
         try:
             response = self.execution_client.eth.get_uncle_count(
                 block_identifier)
-        except BlockNotFound:
+        except (BlockNotFound, ValueError):
             return None
 
         return {"uncle_count": response}
@@ -167,7 +170,7 @@ class ExecutionClientConnector:
             else:
                 response = self.execution_client.eth.get_block(
                     block_identifier, full_transactions)
-        except BlockNotFound:
+        except (BlockNotFound, ValueError):
             return None
 
         return json.loads(Web3.toJSON(response))
@@ -176,14 +179,17 @@ class ExecutionClientConnector:
         try:
             response = self.execution_client.eth.get_transaction_by_block(
                 block_identifier, transaction_index)
-        except TransactionNotFound:
+        except (TransactionNotFound, ValueError):
             return None
 
         return json.loads(Web3.toJSON(response))
 
     def get_transaction_receipt(self, transaction_hash):
-        response = self.execution_client.eth.get_transaction_receipt(
-            transaction_hash)
+        try:
+            response = self.execution_client.eth.get_transaction_receipt(
+                transaction_hash)
+        except (TransactionNotFound, ValueError):
+            return None
 
         return json.loads(Web3.toJSON(response))
 
@@ -191,7 +197,7 @@ class ExecutionClientConnector:
         try:
             response = self.execution_client.eth.get_uncle_by_block(
                 block_identifier, uncle_index)
-        except BlockNotFound:
+        except (BlockNotFound, ValueError):
             return None
 
         return json.loads(Web3.toJSON(response))
