@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
-from typing import Any, List, Dict, Union, Optional
+from typing import Any, List, Union, Optional
 
 
-# Additional Models
+# Execution Client Additional Models
 
 class Transaction(BaseModel):
     blockHash: str
@@ -24,18 +24,6 @@ class Transaction(BaseModel):
     v: int
     r: str
     s: str
-
-
-class Log(BaseModel):
-    address: str
-    topics: List[str]
-    data: str
-    blockNumber: int
-    transactionHash: str
-    transactionIndex: int
-    blockHash: str
-    logIndex: int
-    removed: bool
 
 
 # Execution Client Gossip Methods
@@ -194,6 +182,17 @@ class ExecutionClientResponseModelGetTransactionByBlock(Transaction):
 
 
 class ExecutionClientResponseModelGetTransactionReceipt(BaseModel):
+    class Log(BaseModel):
+        address: str
+        topics: List[str]
+        data: str
+        blockNumber: int
+        transactionHash: str
+        transactionIndex: int
+        blockHash: str
+        logIndex: int
+        removed: bool
+
     blockHash: str
     blockNumber: int
     contractAddress: Any
