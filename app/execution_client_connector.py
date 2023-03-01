@@ -1,4 +1,5 @@
 from web3 import Web3
+from web3._utils.empty import Empty
 from web3.exceptions import BlockNotFound, TransactionNotFound
 import json
 
@@ -23,6 +24,9 @@ class ExecutionClientConnector:
 
     def default_account(self):
         response = self.execution_client.eth.default_account
+
+        if type(response) is Empty:
+            response = None
 
         return {"default_account": response}
 
