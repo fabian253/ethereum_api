@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Union
 
-from fastapi import Depends, FastAPI, HTTPException, status, Request, Query
+from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -440,9 +440,31 @@ async def execution_client_get_block(
     return response
 
 
-@app.get("/execution_client/get_transaction_by_block",
+@app.get("/execution_client/get_transaction",
          tags=["Execution Client History Methods"],
-         responses={200: {"model": ExecutionClientResponseModelGetTransactionByBlock}, 400: {"model": ErrorResponseModel}})
+         responses={200: {"model": ExecutionClientResponseModelGetTransaction}, 400: {"model": ErrorResponseModel}})
+async def execution_client_get_transaction(
+        transaction_hash: str = TRANSACTION_HASH_QUERY_PARAMETER,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Returns the transaction specified by transaction_hash. 
+
+    Throws TransactionNotFound if a transaction is not found at specified arguments.
+    """
+    response = execution_client.get_transaction(transaction_hash)
+
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transaction not found (transaction_hash: {transaction_hash})"
+        )
+
+    return response
+
+
+@ app.get("/execution_client/get_transaction_by_block",
+          tags=["Execution Client History Methods"],
+          responses={200: {"model": ExecutionClientResponseModelGetTransactionByBlock}, 400: {"model": ErrorResponseModel}})
 async def execution_client_get_transaction_by_block(
         block_identifier: Union[int, str] = BLOCK_IDENTIFIER_QUERY_PARAMETER,
         transaction_index: int = TRANSACTION_INDEX_QUERY_PARAMETER,

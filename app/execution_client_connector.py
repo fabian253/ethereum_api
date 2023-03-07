@@ -175,6 +175,15 @@ class ExecutionClientConnector:
 
         return json.loads(Web3.toJSON(response))
 
+    def get_transaction(self, transaction_hash: str):
+        try:
+            response = self.execution_client.eth.get_transaction(
+                transaction_hash)
+        except TransactionNotFound:
+            return None
+
+        return json.loads(Web3.toJSON(response))
+
     def get_transaction_by_block(self, block_identifier, transaction_index):
         try:
             response = self.execution_client.eth.get_transaction_by_block(

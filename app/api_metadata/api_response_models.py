@@ -181,6 +181,10 @@ class ExecutionClientResponseModelGetTransactionByBlock(Transaction):
     pass
 
 
+class ExecutionClientResponseModelGetTransaction(Transaction):
+    pass
+
+
 class ExecutionClientResponseModelGetTransactionReceipt(BaseModel):
     class Log(BaseModel):
         address: str
