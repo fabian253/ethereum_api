@@ -549,7 +549,7 @@ async def execution_client_get_uncle_by_block(
 @app.get("/execution_client/contract/get_erc20_token_name",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_erc20_token_name(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the name of the token.
@@ -566,7 +566,7 @@ async def execution_client_get_erc20_token_name(
 @app.get("/execution_client/contract/get_erc20_token_symbol",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_erc20_token_symbol(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the symbol of the token.
@@ -582,7 +582,7 @@ async def execution_client_get_erc20_token_symbol(
 @app.get("/execution_client/contract/get_erc20_token_decimals",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_erc20_token_decimals(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the number of decimals the token uses - e.g. 8, means to divide the token amount by 100000000 to get its user representation.
@@ -598,7 +598,7 @@ async def execution_client_get_erc20_token_decimals(
 @app.get("/execution_client/contract/get_erc20_token_total_supply",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_erc20_token_total_supply(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the total token supply.
@@ -613,8 +613,8 @@ async def execution_client_get_erc20_token_total_supply(
 
 @app.get("/execution_client/contract/get_erc20_token_balance_of",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc20_token_total_supply(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_erc20_token_balance_of(
+        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
         wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
@@ -631,7 +631,7 @@ async def execution_client_get_erc20_token_total_supply(
 @app.get("/execution_client/contract/get_erc721_token_name",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_erc721_token_name(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the name of the token.
@@ -648,7 +648,7 @@ async def execution_client_get_erc721_token_name(
 @app.get("/execution_client/contract/get_erc721_token_symbol",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_erc721_token_symbol(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the symbol of the token.
@@ -661,26 +661,10 @@ async def execution_client_get_erc721_token_symbol(
     )
 
 
-@app.get("/execution_client/contract/get_erc721_token_decimals",
-         tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_decimals(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
-        current_user: User = Depends(get_current_active_user)):
-    """
-    Returns the number of decimals the token uses - e.g. 8, means to divide the token amount by 100000000 to get its user representation.
-    """
-    # TODO: implement when synced
-
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
-
-
 @app.get("/execution_client/contract/get_erc721_token_total_supply",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_erc721_token_total_supply(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the total token supply.
@@ -695,9 +679,26 @@ async def execution_client_get_erc721_token_total_supply(
 
 @app.get("/execution_client/contract/get_erc721_token_balance_of",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_total_supply(
-        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_erc721_token_balance_of(
+        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
         wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Returns the account balance of another account with address wallet_address.
+    """
+    # TODO: implement when synced
+
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Not implemented"
+    )
+
+
+@app.get("/execution_client/contract/get_erc721_token_owner_of",
+         tags=["Execution Client Contract Methods"])
+async def execution_client_get_erc721_token_owner_of(
+        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
+        token_id: int = TOKEN_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
     Returns the account balance of another account with address wallet_address.
