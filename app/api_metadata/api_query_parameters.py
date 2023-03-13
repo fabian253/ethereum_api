@@ -76,10 +76,22 @@ UNCLE_INDEX_QUERY_PARAMETER = Query(
     example=0
 )
 
-CONTRACT_ADDRESS_QUERY_PARAMETER = Query(
-    title="Contract Address",
-    description="Address of the contract",
+ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER = Query(
+    title="ERC-20 Contract Address",
+    description="ERC-20 Address of the contract",
     example="0xdAC17F958D2ee523a2206206994597C13D831ec7"
+)
+
+ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER = Query(
+    title="ERC-721 Contract Address",
+    description="ERC-721 Address of the contract",
+    example="0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"
+)
+
+TOKEN_ID_QUERY_PARAMETER = Query(
+    title="Token ID",
+    description="ID of the token",
+    example=0
 )
 
 
