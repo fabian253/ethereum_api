@@ -23,6 +23,10 @@ API_TAGS_METADATA = [
         "description": "Fetches historical records of every block back to genesis. This is like one large append-only file, and includes all block headers, block bodies, uncle blocks, and transaction receipts."
     },
     {
+        "name": "Execution Client Contract Methods",
+        "description": "Methods to obtain information about contracts."
+    },
+    {
         "name": "Consensus Client Beacon Methods",
         "description": "Set of endpoints to query beacon chain."
     },

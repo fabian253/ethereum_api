@@ -76,6 +76,12 @@ UNCLE_INDEX_QUERY_PARAMETER = Query(
     example=0
 )
 
+CONTRACT_ADDRESS_QUERY_PARAMETER = Query(
+    title="Contract Address",
+    description="Address of the contract",
+    example="0xdAC17F958D2ee523a2206206994597C13D831ec7"
+)
+
 
 # Consensus Client
 
