@@ -6,9 +6,16 @@ import json
 
 class ExecutionClientConnector:
 
-    def __init__(self, execution_client_ip: str, execution_client_port: int) -> None:
+    def __init__(self,
+                 execution_client_ip: str,
+                 execution_client_port: int,
+                 erc20_abi: list,
+                 erc721_abi: list
+                 ) -> None:
         self.client_ip = execution_client_ip
         self.client_port = execution_client_port
+        self.erc20_abi = erc20_abi
+        self.erc721_abi = erc721_abi
         # init execution client
         self.execution_client = Web3(Web3.HTTPProvider(
             f"http://{self.client_ip}:{self.client_port}"))
@@ -210,3 +217,51 @@ class ExecutionClientConnector:
             return None
 
         return json.loads(Web3.toJSON(response))
+
+    # Contract methods
+
+    def get_erc20_token_name(self, contract_address: str):
+        # TODO: implement
+        contract = self.execution_client.eth.contract(
+            Web3.toChecksumAddress(contract_address), abi=self.erc20_abi)
+
+        return contract.functions.name().call()
+
+    def get_erc20_token_symbol(self, contract_address: str):
+        # TODO: implement
+        pass
+
+    def get_erc20_token_decimals(self, contract_address: str):
+        # TODO: implement
+        pass
+
+    def get_erc20_token_total_supply(self, contract_address: str):
+        # TODO: implement
+        pass
+
+    def get_erc20_token_balance_of(self, contract_address: str, wallet_address: str):
+        # TODO: implement
+        pass
+
+    def get_erc721_token_name(self, contract_address: str):
+        # TODO: implement
+        contract = self.execution_client.eth.contract(
+            Web3.toChecksumAddress(contract_address), abi=self.erc721_abi)
+
+        return contract.functions.name().call()
+
+    def get_erc721_token_symbol(self, contract_address: str):
+        # TODO: implement
+        pass
+
+    def get_erc721_token_total_supply(self, contract_address: str):
+        # TODO: implement
+        pass
+
+    def get_erc721_token_balance_of(self, contract_address: str, wallet_address: str):
+        # TODO: implement
+        pass
+
+    def get_erc721_token_owner_of(self, contract_address: str, token_id: int):
+        # TODO: implement
+        pass
