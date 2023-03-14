@@ -556,7 +556,7 @@ async def execution_client_get_erc20_token_name(
     Returns the name of the token.
     """
     # TODO: implement when synced
-    #response = execution_client.get_erc20_token_name(contract_address)
+    # response = execution_client.get_erc20_token_name(contract_address)
 
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -864,7 +864,6 @@ async def consensus_client_get_attestations(current_user: User = Depends(get_cur
     """
     Retrieves attestations known by the node but not necessarily incorporated into any block
     """
-    # TODO: not working yet (empty response)
     response = consensus_client.get_attestations()
     return response
 
