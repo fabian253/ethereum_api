@@ -483,11 +483,27 @@ class ConsensusClientResponseModelGetBlockAttestations(BaseModel):
 
 
 class ConsensusClientResponseModelGetAttestations(BaseModel):
-    # TODO: method and endpoint not working
     class Data(BaseModel):
-        pass
+        class Data(BaseModel):
+            class Source(BaseModel):
+                epoch: str
+                root: str
 
-    data: List
+            class Target(BaseModel):
+                epoch: str
+                root: str
+
+            slot: str
+            index: str
+            beacon_block_root: str
+            source: Source
+            target: Target
+
+        aggregation_bits: str
+        data: Data
+        signature: str
+
+    data: List[Data]
 
 
 class ConsensusClientResponseModelGetAttesterSlashings(BaseModel):
