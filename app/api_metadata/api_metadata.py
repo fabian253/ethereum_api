@@ -37,6 +37,10 @@ API_TAGS_METADATA = [
     {
         "name": "Consensus Client Node Methods",
         "description": "Endpoints to query node related informations"
+    },
+    {
+        "name": "Evaluation",
+        "description": "Endpoints for evaluation"
     }
 ]
 API_SWAGGER_UI_PARAMETERS = {
