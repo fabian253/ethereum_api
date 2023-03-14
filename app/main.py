@@ -18,6 +18,7 @@ import app.config as config
 from app.execution_client_connector import ExecutionClientConnector
 from app.consensus_client_connector import ConsensusClientConnector
 from app.users_db import users_db
+import app.evaluation as evaluation
 
 
 with open("app/contract_abi/erc20_abi.json", "r") as infile:
@@ -992,9 +993,45 @@ async def consensus_client_get_syncing(current_user: User = Depends(get_current_
     return response
 
 
+# Evaluation
+
+@app.get("/execution_client/evaluation/evaluate_block_request_time", tags=["Evaluation"])
+async def execution_client_get_block_request_time(
+        block_identifier_list: list[Union[int, str]
+                                    ] = BLOCK_IDENTIFIER_LIST_QUERY_PARAMETER,
+        full_transactions: bool = FULL_TRANSACTION_QUERY_PARAMETER,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Evaluate request time of get_block method.
+
+    If full_transactions is True then the 'transactions' key will contain full transactions objects. Otherwise it will be an array of transaction hashes.
+    """
+    response = evaluation.evaluate_request_time_get_block(
+        execution_client, block_identifier_list, full_transactions)
+
+    return response
+
+
+@app.get("/execution_client/evaluation/evaluate_transaction_request_time", tags=["Evaluation"])
+async def execution_client_get_block_request_time(
+        transaction_hash_list: list[str] = TRANSACTION_HASH_LIST_QUERY_PARAMETER,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Evaluate request time of get_transaction method.
+
+    If full_transactions is True then the 'transactions' key will contain full transactions objects. Otherwise it will be an array of transaction hashes.
+    """
+    response = evaluation.evaluate_request_time_get_transaction(
+        execution_client, transaction_hash_list)
+
+    return response
+
+
 # Other Routes
 
 # catch all unknown routes
+
+
 @ app.route("/{full_path:path}")
 async def catch_all_unknown_routes(full_path: str):
     raise HTTPException(
