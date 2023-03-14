@@ -1030,8 +1030,6 @@ async def execution_client_get_block_request_time(
 # Other Routes
 
 # catch all unknown routes
-
-
 @ app.route("/{full_path:path}")
 async def catch_all_unknown_routes(full_path: str):
     raise HTTPException(

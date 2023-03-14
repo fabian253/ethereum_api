@@ -6,3 +6,4 @@ web3==5.31.3
 python-multipart==0.0.5
 python-jose[cryptography] == 3.3.0
 passlib[bcrypt] == 1.7.4
+numpy == 1.23.3
