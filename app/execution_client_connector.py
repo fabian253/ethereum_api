@@ -1,24 +1,31 @@
 from web3 import Web3
 from web3._utils.empty import Empty
-from web3.exceptions import BlockNotFound, TransactionNotFound
+from web3.exceptions import BlockNotFound, TransactionNotFound, NoABIFound
 import json
+import requests
+from enum import Enum
+from os import listdir
+from typing import Union
+
+
+TokenStandard = Enum("TokenStandard", [(token_standard.replace(
+    ".json", ""), token_standard.replace(
+    ".json", "")) for token_standard in listdir(f"app/token_standard")])
 
 
 class ExecutionClientConnector:
 
     def __init__(self,
-                 execution_client_ip: str,
-                 execution_client_port: int,
-                 erc20_abi: list,
-                 erc721_abi: list
+                 execution_client_url,
+                 etherscan_ip: str,
+                 etherscan_api_key: str,
+                 token_standards: dict
                  ) -> None:
-        self.client_ip = execution_client_ip
-        self.client_port = execution_client_port
-        self.erc20_abi = erc20_abi
-        self.erc721_abi = erc721_abi
+        self.etherscan_ip = etherscan_ip
+        self.etherscan_api_key = etherscan_api_key
+        self.token_standards = token_standards
         # init execution client
-        self.execution_client = Web3(Web3.HTTPProvider(
-            f"http://{self.client_ip}:{self.client_port}"))
+        self.execution_client = Web3(Web3.HTTPProvider(execution_client_url))
 
     # Gossip methods
 
@@ -182,14 +189,36 @@ class ExecutionClientConnector:
 
         return json.loads(Web3.toJSON(response))
 
-    def get_transaction(self, transaction_hash: str):
+    def get_transaction(self, transaction_hash: str, decode_input: bool = True):
+        # TODO: improve decode input
         try:
             response = self.execution_client.eth.get_transaction(
                 transaction_hash)
+
+            response = json.loads(Web3.toJSON(response))
+
+            if decode_input and response["input"] != "0x":
+                contract_address = response["to"]
+
+                contract_abi = self.get_contract_abi(contract_address)
+
+                contract = self.execution_client.eth.contract(
+                    address=contract_address, abi=contract_abi)
+
+                func_obj, func_params = contract.decode_function_input(
+                    response["input"])
+
+                decoded_input = {
+                    "function": func_obj,
+                    "params": func_params
+                }
+
+                response["input_decoded"] = decoded_input
+
         except TransactionNotFound:
             return None
 
-        return json.loads(Web3.toJSON(response))
+        return response
 
     def get_transaction_by_block(self, block_identifier, transaction_index):
         try:
@@ -220,48 +249,206 @@ class ExecutionClientConnector:
 
     # Contract methods
 
-    def get_erc20_token_name(self, contract_address: str):
-        # TODO: implement
+    def get_token_standard_abi(self, token_standard: TokenStandard):
+        return self.token_standards[token_standard.name]
+
+    def get_contract_abi(self, contract_address: str):
+        # no other way to get abi than from etherscan
+
+        params = {
+            "module": "contract",
+            "action": "getabi",
+            "address":  contract_address,
+            "apikey": self.etherscan_api_key
+        }
+
+        response = requests.get(self.etherscan_ip, params=params)
+
+        if response.json()["status"] == "0":
+            raise NoABIFound
+
+        return json.loads(response.json()["result"])
+
+    def get_contract_implemented_token_standards(self, contract_address: str):
+        # TODO: improve filter function with more than function name
+        contract_abi = self.get_contract_abi(contract_address)
+
+        contract_abi = [
+            contract_function_abi for contract_function_abi in contract_abi if contract_function_abi["type"] != "constructor"]
+
+        implemented_token_standards = {}
+
+        for token_standard_name, token_standard_abi in self.token_standards.items():
+            # implemented flag
+            implemented = True
+
+            for token_standard_function_abi in token_standard_abi:
+                contract_function_filter = [
+                    contract_function for contract_function in contract_abi if contract_function["name"] == token_standard_function_abi["name"]]
+
+                if len(contract_function_filter) == 0:
+                    implemented = False
+                    break
+
+            implemented_token_standards[token_standard_name] = implemented
+
+        return implemented_token_standards
+
+    def get_all_contract_functions(self, contract_address: str, as_abi: bool = True):
+        """
+        returns all contract functions
+        if as_abi = True -> return abi of all functions
+        if as_abi = False -> return names of all functions
+        """
+        contract_abi = self.get_contract_abi(contract_address)
+
+        if as_abi:
+            contract_functions = [
+                func for func in contract_abi if func["type"] == "function"]
+        else:
+            contract_functions = [
+                func["name"] for func in contract_abi if func["type"] == "function"]
+
+        return contract_functions
+
+    def get_all_contract_events(self, contract_address: str,  as_abi: bool = True):
+        """
+        returns all contract events
+        if as_abi = True -> return abi of all events
+        if as_abi = False -> return names of all events
+        """
+        contract_abi = self.get_contract_abi(contract_address)
+
+        if as_abi:
+            contract_events = [
+                event for event in contract_abi if event["type"] == "event"]
+        else:
+            contract_events = [
+                event["name"] for event in contract_abi if event["type"] == "event"]
+
+        return contract_events
+
+    def execute_contract_function(self, contract_address: str, function_name: str, *function_args):
+        contract_abi = self.get_contract_abi(contract_address)
+
         contract = self.execution_client.eth.contract(
-            Web3.toChecksumAddress(contract_address), abi=self.erc20_abi)
+            Web3.toChecksumAddress(contract_address), abi=contract_abi)
 
-        return contract.functions.name().call()
+        contract_function = contract.functions[function_name]
 
-    def get_erc20_token_symbol(self, contract_address: str):
-        # TODO: implement
-        pass
+        response = contract_function(*function_args).call()
 
-    def get_erc20_token_decimals(self, contract_address: str):
-        # TODO: implement
-        pass
+        return response
 
-    def get_erc20_token_total_supply(self, contract_address: str):
-        # TODO: implement
-        pass
+    def get_contract_events_by_name(self,
+                                    contract_address: str,
+                                    event_name: str,
+                                    from_block: Union[int, str] = 0,
+                                    to_block: Union[int, str] = "latest",
+                                    argument_filters: dict = {}):
+        contract_abi = self.get_contract_abi(contract_address)
 
-    def get_erc20_token_balance_of(self, contract_address: str, wallet_address: str):
-        # TODO: implement
-        pass
-
-    def get_erc721_token_name(self, contract_address: str):
-        # TODO: implement
         contract = self.execution_client.eth.contract(
-            Web3.toChecksumAddress(contract_address), abi=self.erc721_abi)
+            Web3.toChecksumAddress(contract_address), abi=contract_abi)
 
-        return contract.functions.name().call()
+        contract_event_list = []
 
-    def get_erc721_token_symbol(self, contract_address: str):
-        # TODO: implement
-        pass
+        # create event object
+        contract_event = contract.events[event_name]
 
-    def get_erc721_token_total_supply(self, contract_address: str):
-        # TODO: implement
-        pass
+        batch_from_block = from_block
+        batch_to_block = to_block
 
-    def get_erc721_token_balance_of(self, contract_address: str, wallet_address: str):
-        # TODO: implement
-        pass
+        more_batches = True
 
-    def get_erc721_token_owner_of(self, contract_address: str, token_id: int):
-        # TODO: implement
-        pass
+        # get all data in batches
+        while more_batches:
+            try:
+                # try if batch size is in limits (<10000)
+                event_filter = contract_event.createFilter(
+                    fromBlock=batch_from_block, toBlock=batch_to_block, argument_filters=argument_filters)
+
+                response = event_filter.get_all_entries()
+
+                contract_event_list.extend(
+                    json.loads(Web3.toJSON(response)))
+
+                if batch_to_block == to_block:
+                    more_batches = False
+                else:
+                    batch_from_block = batch_to_block + 1
+                    batch_to_block = to_block
+
+            except ValueError as e:
+                # change batch intervall if intervall is bigger than limits
+                batch_from_block = int(e.args[0]["data"]["from"], 16)
+                batch_to_block = int(e.args[0]["data"]["to"], 16)
+                pass
+
+        return contract_event_list
+
+    def get_token_transfers(self,
+                            contract_address: str,
+                            from_block: Union[int, str] = 0,
+                            to_block: Union[int, str] = "latest",
+                            argument_filters: dict = {}):
+        """
+        will not work with all contracts because of missing 'Transfer' event in abi
+        """
+        return self.get_contract_events_by_name(contract_address, "Transfer", from_block, to_block, argument_filters)
+
+    def get_token_events(self,
+                         contract_address: str,
+                         from_block: Union[int, str] = 0,
+                         to_block: Union[int, str] = "latest"):
+        contract_event_list = []
+
+        # create event object
+
+        batch_from_block = from_block
+        batch_to_block = to_block
+
+        more_batches = True
+
+        # get all data in batches
+        while more_batches:
+            try:
+                # try if batch size is in limits (<10000)
+                event_filter = self.execution_client.eth.filter({
+                    "fromBlock": batch_from_block,
+                    "toBlock": batch_to_block,
+                    "address": contract_address
+                })
+
+                response = event_filter.get_all_entries()
+
+                contract_event_list.extend(
+                    json.loads(Web3.toJSON(response)))
+
+                if batch_to_block == to_block:
+                    more_batches = False
+                else:
+                    batch_from_block = batch_to_block + 1
+                    batch_to_block = to_block
+
+            except ValueError as e:
+                # change batch intervall if intervall is bigger than limits
+                batch_from_block = int(e.args[0]["data"]["from"], 16)
+                batch_to_block = int(e.args[0]["data"]["to"], 16)
+                pass
+
+        return contract_event_list
+
+    def get_erc721_token_metadata(self, contract_address: str):
+        token_name = self.execute_contract_function(contract_address, "name")
+        token_symbol = self.execute_contract_function(
+            contract_address, "symbol")
+        token_total_supply = self.execute_contract_function(
+            contract_address, "totalSupply")
+
+        return {
+            "address": contract_address,
+            "name": token_name,
+            "symbol": token_symbol,
+            "total_supply": token_total_supply
+        }

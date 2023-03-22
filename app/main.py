@@ -15,20 +15,25 @@ from app.api_metadata.api_query_parameters import *
 import app.api_metadata.api_metadata as api_metadata
 
 import app.config as config
-from app.execution_client_connector import ExecutionClientConnector
+from app.execution_client_connector import ExecutionClientConnector, TokenStandard
 from app.consensus_client_connector import ConsensusClientConnector
 from app.users_db import users_db
 import app.evaluation as evaluation
 
 
-with open("app/contract_abi/erc20_abi.json", "r") as infile:
-    erc20_abi = json.load(infile)
+execution_client_url = f"http://{config.EXECUTION_CLIENT_IP}:{config.EXECUTION_CLIENT_PORT}"
 
-with open("app/contract_abi/erc721_abi.json", "r") as infile:
-    erc721_abi = json.load(infile)
+# TODO: change url from infura
+infura_url = "https://mainnet.infura.io/v3/c2762ad3b91949a099c826439f9dc5c6"
+
+# init token standards
+token_standards = {}
+for token_standard in TokenStandard:
+    with open(f"app/token_standard/{token_standard.name}.json", "r") as f:
+        token_standards[token_standard.name] = json.load(f)
 
 execution_client = ExecutionClientConnector(
-    config.EXECUTION_CLIENT_IP, config.EXECUTION_CLIENT_PORT, erc20_abi, erc721_abi)
+    infura_url, config.ETHERSCAN_IP, config.ETHERSCAN_API_KEY, token_standards)
 
 consensus_client = ConsensusClientConnector(
     config.CONSENCUS_CLIENT_IP, config.CONSENSUS_CLIENT_PORT)
@@ -547,169 +552,242 @@ async def execution_client_get_uncle_by_block(
 
 # Execution Client Contract Methods
 
-@app.get("/execution_client/contract/get_erc20_token_name",
+@app.get("/execution_client/contract/get_token_standard_abi",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc20_token_name(
-        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_token_standard_abi(
+    token_standard: TokenStandard = TOKEN_STANDARD_QUERY_PARAMETER,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Returns the Contract Application Binary Interface (ABI) of a token standard.
+
+    There are multiple token standards provided:
+    * ERC20
+    * ERC20Metadata
+    * ERC165
+    * ERC721
+    * ERC721Enumerable
+    * ERC721Metadata
+    * ERC777Token
+    * ERC1155
+    * ERC1155TokenReceiver
+    """
+    response = execution_client.get_token_standard_abi(token_standard)
+
+    return response
+
+
+@app.get("/execution_client/contract/get_contract_abi",
+         tags=["Execution Client Contract Methods"])
+async def execution_client_get_contract_abi(
+        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the name of the token.
+    Returns the Contract Application Binary Interface (ABI) of a verified smart contract.
     """
-    # TODO: implement when synced
-    # response = execution_client.get_erc20_token_name(contract_address)
+    response = execution_client.get_contract_abi(contract_address)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Contract not found (contract_address: {contract_address})"
+        )
+
+    return response
 
 
-@app.get("/execution_client/contract/get_erc20_token_symbol",
+@app.get("/execution_client/contract/get_implemented_token_standards",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc20_token_symbol(
-        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_contract_implemented_token_standards(
+        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the symbol of the token.
+    Return if token standards are implemented by contract Application Binary Interface (ABI).
     """
-    # TODO: implement when synced
+    response = execution_client.get_contract_implemented_token_standards(
+        contract_address)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Contract not found (contract_address: {contract_address})"
+        )
+
+    return response
 
 
-@app.get("/execution_client/contract/get_erc20_token_decimals",
+@app.get("/execution_client/contract/get_contract_functions",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc20_token_decimals(
-        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_contract_functions(
+        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        as_abi: bool = AS_ABI_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the number of decimals the token uses - e.g. 8, means to divide the token amount by 100000000 to get its user representation.
+    Returns all contract functions.
     """
-    # TODO: implement when synced
+    response = execution_client.get_all_contract_functions(
+        contract_address, as_abi)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
+    return response
 
 
-@app.get("/execution_client/contract/get_erc20_token_total_supply",
+@app.get("/execution_client/contract/get_contract_events",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc20_token_total_supply(
-        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_contract_events(
+        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        as_abi: bool = AS_ABI_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the total token supply.
+    Returns all contract events.
     """
-    # TODO: implement when synced
+    response = execution_client.get_all_contract_events(
+        contract_address, as_abi)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
+    return response
 
 
-@app.get("/execution_client/contract/get_erc20_token_balance_of",
+@app.get("/execution_client/contract/execute_contract_function",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc20_token_balance_of(
-        contract_address: str = ERC_20_CONTRACT_ADDRESS_QUERY_PARAMETER,
-        wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
+async def execution_client_execute_contract_function(
+        contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
+        function_name: str = CONTRACT_FUNCTION_QUERY_PARAMETER,
+        function_args: list[Union[int, str, bool, float]
+                            ] = CONTRACT_FUNCTION_ARGS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the account balance of another account with address wallet_address.
+    Execute contract function by name and arguments.
+
+    Will only work for call functions.
     """
-    # TODO: implement when synced
+    response = execution_client.execute_contract_function(
+        contract_address, function_name, *function_args)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
+    if response is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Contract or ABI function not found (contract_address: {contract_address})"
+        )
+
+    return {function_name: response}
 
 
-@app.get("/execution_client/contract/get_erc721_token_name",
+@app.get("/execution_client/contract/get_token_events",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_name(
-        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_token_events(
+        contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
+        from_block: Union[int,
+                          str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
+        to_block: Union[int,
+                        str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the name of the token.
+    Returns the transactions of the given ERC20 contract address under the provided filters.
+
+    * from_block (optional): first block to filter from
+    * to_block (optional): last block to filter to
     """
-    # TODO: implement when synced
-    # response = execution_client.get_erc721_token_name(contract_address)
+    response = execution_client.get_token_events(
+        contract_address, from_block, to_block)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
+    return response
 
 
-@app.get("/execution_client/contract/get_erc721_token_symbol",
+@app.get("/execution_client/contract/get_erc20_token_transfers",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_symbol(
-        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_erc20_token_transfers(
+        contract_address: str = ERC20_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
+        from_block: Union[int,
+                          str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
+        to_block: Union[int,
+                        str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
+        from_address: Union[str,
+                            None] = ERC20_TOKEN_TRANSFERS_FROM_ADDRESS_QUERY_PARAMETER,
+        to_address: Union[str,
+                          None] = ERC20_TOKEN_TRANSFERS_TO_ADDRESS_QUERY_PARAMETER,
+        value: Union[int,
+                     None] = ERC20_TOKEN_TRANSFERS_VALUE_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the symbol of the token.
-    """
-    # TODO: implement when synced
+    Returns the transactions of the given ERC20 contract address under the provided filters.
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
+    * from_block (optional): first block to filter from
+    * to_block (optional): last block to filter to
+    * from_address (optional): from address of the transfer
+    * to_address (optional): to address of the transfer
+    * value (optional): value of the transfer
+    """
+    argument_filters = {}
+    if from_address is not None:
+        argument_filters["from"] = from_address
+    if to_address is not None:
+        argument_filters["to"] = to_address
+    if value is not None:
+        argument_filters["value"] = value
+
+    response = execution_client.get_token_transfers(
+        contract_address,
+        from_block,
+        to_block,
+        argument_filters
     )
 
+    return response
 
-@app.get("/execution_client/contract/get_erc721_token_total_supply",
+
+@app.get("/execution_client/contract/get_erc721_token_transfers",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_total_supply(
-        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_erc721_token_transfers(
+        contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
+        from_block: Union[int,
+                          str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
+        to_block: Union[int,
+                        str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
+        from_address: Union[str,
+                            None] = ERC721_TOKEN_TRANSFERS_FROM_ADDRESS_QUERY_PARAMETER,
+        to_address: Union[str,
+                          None] = ERC721_TOKEN_TRANSFERS_TO_ADDRESS_QUERY_PARAMETER,
+        token_id: Union[int,
+                        None] = ERC721_TOKEN_TRANSFERS_TOKEN_ID_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the total token supply.
-    """
-    # TODO: implement when synced
+    Returns the transactions of the given ERC721 contract address under the provided filters.
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
+    * from_block (optional): first block to filter from
+    * to_block (optional): last block to filter to
+    * from_address (optional): from address of the transfer
+    * to_address (optional): to address of the transfer
+    * token_id (optional): ID of the token
+    """
+    argument_filters = {}
+    if from_address is not None:
+        argument_filters["from"] = from_address
+    if to_address is not None:
+        argument_filters["to"] = to_address
+    if token_id is not None:
+        argument_filters["tokenId"] = token_id
+
+    response = execution_client.get_token_transfers(
+        contract_address,
+        from_block,
+        to_block,
+        argument_filters
     )
 
+    return response
 
-@app.get("/execution_client/contract/get_erc721_token_balance_of",
+
+@app.get("/execution_client/contract/get_erc721_token_metadata",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_balance_of(
-        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
-        wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
+async def execution_client_get_erc721_token_metadata(
+        contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Returns the account balance of another account with address wallet_address.
+    Return token metadata of ERC721 contract.
     """
-    # TODO: implement when synced
+    response = execution_client.get_erc721_token_metadata(
+        contract_address)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
-
-
-@app.get("/execution_client/contract/get_erc721_token_owner_of",
-         tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_owner_of(
-        contract_address: str = ERC_721_CONTRACT_ADDRESS_QUERY_PARAMETER,
-        token_id: int = TOKEN_ID_QUERY_PARAMETER,
-        current_user: User = Depends(get_current_active_user)):
-    """
-    Returns the account balance of another account with address wallet_address.
-    """
-    # TODO: implement when synced
-
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Not implemented"
-    )
+    return response
 
 
 # Consensus Client Beacon Methods

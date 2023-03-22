@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Any, List, Union, Optional
+from typing import Any, List, Dict, Union, Optional
 
 
 # Execution Client Additional Models
@@ -14,6 +14,7 @@ class Transaction(BaseModel):
     maxPriorityFeePerGas: Optional[int] = None
     hash: str
     input: str
+    input_decoded: Optional[Dict] = None
     nonce: int
     to: str
     transactionIndex: int
