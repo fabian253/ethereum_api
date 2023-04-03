@@ -134,3 +134,4 @@ app/config.py
 app/authentication_hash_creation.py
 app/users_db.py
 app/request_test
+app/db_metadata/sql_commands.sql
