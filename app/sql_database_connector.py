@@ -144,17 +144,55 @@ class SqlDatabaseConnector:
 
         return data
 
-    def query_erc721_contract_addresses(self, table_name: str, limit: int = 1000) -> list:
-        return self.__query_contract_addresses(table_name, "ERC721", limit)
+    def query_erc721_contracts(self,
+                               table_name: str,
+                               with_name: bool = False,
+                               with_symbol: bool = False,
+                               with_total_supply: bool = False,
+                               with_abi: bool = False,
+                               limit: int = 1000) -> list:
+        return self.__query_contracts(table_name, "ERC721", with_name, with_symbol, with_total_supply, with_abi, limit)
 
-    def query_erc20_contract_addresses(self, table_name: str, limit: int = 1000) -> list:
-        return self.__query_contract_addresses(table_name, "ERC20", limit)
+    def query_erc20_contracts(self,
+                              table_name: str,
+                              with_name: bool = False,
+                              with_symbol: bool = False,
+                              with_total_supply: bool = False,
+                              with_abi: bool = False,
+                              limit: int = 1000) -> list:
+        return self.__query_contracts(table_name, "ERC20", with_name, with_symbol, with_total_supply, with_abi, limit)
 
-    def __query_contract_addresses(self, table_name: str, token_standard: str, limit: int = 1000) -> list:
+    def __query_contracts(self,
+                          table_name: str,
+                          token_standard: str,
+                          with_name: bool = False,
+                          with_symbol: bool = False,
+                          with_total_supply: bool = False,
+                          with_abi: bool = False,
+                          limit: int = 1000) -> list:
+        fields = ["contract_address"]
+        if with_name:
+            fields.append("name")
+        if with_symbol:
+            fields.append("symbol")
+        if with_total_supply:
+            fields.append("total_supply")
+        if with_abi:
+            fields.append("abi")
+
         data = self.query_data(
-            table_name, ["contract_address"], {token_standard: True}, limit)
+            table_name, fields, {token_standard: True}, limit)
 
-        data = [contract["contract_address"] for contract in data]
+        data_types = self.query_data_type(table_name)
+
+        for d in data:
+            for key, value in d.items():
+                if value is not None:
+                    if data_types[key] == "json":
+                        d[key] = json.loads(value.decode("utf-8"))
+
+                    if data_types[key] == "varchar" and value.isdigit():
+                        d[key] = int(value)
 
         return data
 
