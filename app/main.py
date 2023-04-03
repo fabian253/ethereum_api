@@ -17,8 +17,20 @@ import app.api_metadata.api_metadata as api_metadata
 import app.config as config
 from app.execution_client_connector import ExecutionClientConnector, TokenStandard
 from app.consensus_client_connector import ConsensusClientConnector
+from app.sql_database_connector import SqlDatabaseConnector
 from app.users_db import users_db
 import app.evaluation as evaluation
+import app.db_metadata.sql_tables as tables
+
+# init sql database connector
+sql_db_connector = SqlDatabaseConnector(
+    config.SQL_DATABASE_HOST,
+    config.SQL_DATABASE_PORT,
+    config.SQL_DATABASE_USER,
+    config.SQL_DATABASE_PASSWORD
+)
+sql_db_connector.use_database(config.SQL_DATABASE_NAME)
+sql_db_connector.create_table(tables.CONTRACT_TABLE)
 
 
 execution_client_url = f"http://{config.EXECUTION_CLIENT_IP}:{config.EXECUTION_CLIENT_PORT}"
@@ -33,7 +45,7 @@ for token_standard in TokenStandard:
         token_standards[token_standard.name] = json.load(f)
 
 execution_client = ExecutionClientConnector(
-    infura_url, config.ETHERSCAN_IP, config.ETHERSCAN_API_KEY, token_standards)
+    infura_url, config.ETHERSCAN_URL, config.ETHERSCAN_API_KEY, token_standards, sql_db_connector, config.SQL_DATABASE_TABLE_CONTRACT)
 
 consensus_client = ConsensusClientConnector(
     config.CONSENCUS_CLIENT_IP, config.CONSENSUS_CLIENT_PORT)
@@ -776,15 +788,16 @@ async def execution_client_get_erc721_token_transfers(
     return response
 
 
-@app.get("/execution_client/contract/get_erc721_token_metadata",
+@app.get("/execution_client/contract/get_contract_metadata",
          tags=["Execution Client Contract Methods"])
-async def execution_client_get_erc721_token_metadata(
+async def execution_client_get_contract_metadata(
         contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
         current_user: User = Depends(get_current_active_user)):
     """
-    Return token metadata of ERC721 contract.
+    Return contract metadata.
+    Metadata may be empty if functions are not implemented by contract.
     """
-    response = execution_client.get_erc721_token_metadata(
+    response = execution_client.get_contract_metadata(
         contract_address)
 
     return response
