@@ -6,6 +6,7 @@ import requests
 from enum import Enum
 from os import listdir
 from typing import Union
+from app.sql_database_connector import SqlDatabaseConnector
 
 
 TokenStandard = Enum("TokenStandard", [(token_standard.replace(
@@ -19,13 +20,18 @@ class ExecutionClientConnector:
                  execution_client_url,
                  etherscan_ip: str,
                  etherscan_api_key: str,
-                 token_standards: dict
+                 token_standards: dict,
+                 sql_db_connector: SqlDatabaseConnector,
+                 contract_table_name: str
                  ) -> None:
         self.etherscan_ip = etherscan_ip
         self.etherscan_api_key = etherscan_api_key
         self.token_standards = token_standards
         # init execution client
         self.execution_client = Web3(Web3.HTTPProvider(execution_client_url))
+        # set sql db connector
+        self.sql_db_connector = sql_db_connector
+        self.contract_table_name = contract_table_name
 
     # Gossip methods
 
@@ -253,28 +259,48 @@ class ExecutionClientConnector:
         return self.token_standards[token_standard.name]
 
     def get_contract_abi(self, contract_address: str):
-        # no other way to get abi than from etherscan
+        """
+        Return contract abi.
+        Query from db if in db else query from etherscan (no other way)
+        """
+        if self.sql_db_connector.is_contract_in_db(self.contract_table_name, contract_address):
+            contract_data = self.sql_db_connector.query_contract_data(
+                self.contract_table_name, contract_address)
+            return contract_data["abi"]
+        else:
+            # TODO: find other way than etherscan
+            params = {
+                "module": "contract",
+                "action": "getabi",
+                "address":  contract_address,
+                "apikey": self.etherscan_api_key
+            }
+            response = requests.get(self.etherscan_ip, params=params)
 
-        params = {
-            "module": "contract",
-            "action": "getabi",
-            "address":  contract_address,
-            "apikey": self.etherscan_api_key
-        }
+            if response.json()["status"] == "0":
+                raise NoABIFound
 
-        response = requests.get(self.etherscan_ip, params=params)
+            contract_abi = json.loads(response.json()["result"])
 
-        if response.json()["status"] == "0":
-            raise NoABIFound
+            contract_metadata = self.get_contract_metadata(
+                contract_address, contract_abi)
 
-        return json.loads(response.json()["result"])
+            contract_implemented_token_standards = self.get_contract_implemented_token_standards(
+                contract_address, contract_abi)
 
-    def get_contract_implemented_token_standards(self, contract_address: str):
+            # insert data into db
+            self.sql_db_connector.insert_contract_data(
+                self.contract_table_name, contract_address, contract_metadata, contract_implemented_token_standards, contract_abi)
+
+            return contract_abi
+
+    def get_contract_implemented_token_standards(self, contract_address: str, contract_abi=None):
         # TODO: improve filter function with more than function name
-        contract_abi = self.get_contract_abi(contract_address)
+        if contract_abi is None:
+            contract_abi = self.get_contract_abi(contract_address)
 
         contract_abi = [
-            contract_function_abi for contract_function_abi in contract_abi if contract_function_abi["type"] != "constructor"]
+            contract_function_abi for contract_function_abi in contract_abi if "name" in contract_function_abi.keys()]
 
         implemented_token_standards = {}
 
@@ -328,8 +354,9 @@ class ExecutionClientConnector:
 
         return contract_events
 
-    def execute_contract_function(self, contract_address: str, function_name: str, *function_args):
-        contract_abi = self.get_contract_abi(contract_address)
+    def execute_contract_function(self, contract_address: str, function_name: str, contract_abi=None,  *function_args):
+        if contract_abi is None:
+            contract_abi = self.get_contract_abi(contract_address)
 
         contract = self.execution_client.eth.contract(
             Web3.toChecksumAddress(contract_address), abi=contract_abi)
@@ -439,12 +466,22 @@ class ExecutionClientConnector:
 
         return contract_event_list
 
-    def get_erc721_token_metadata(self, contract_address: str):
-        token_name = self.execute_contract_function(contract_address, "name")
-        token_symbol = self.execute_contract_function(
-            contract_address, "symbol")
-        token_total_supply = self.execute_contract_function(
-            contract_address, "totalSupply")
+    def get_contract_metadata(self, contract_address: str, contract_abi=None):
+        try:
+            token_name = self.execute_contract_function(
+                contract_address, "name", contract_abi)
+        except:
+            token_name = None
+        try:
+            token_symbol = self.execute_contract_function(
+                contract_address, "symbol", contract_abi)
+        except:
+            token_symbol = None
+        try:
+            token_total_supply = self.execute_contract_function(
+                contract_address, "totalSupply", contract_abi)
+        except:
+            token_total_supply = None
 
         return {
             "address": contract_address,
