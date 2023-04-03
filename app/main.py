@@ -35,9 +35,6 @@ sql_db_connector.create_table(tables.CONTRACT_TABLE)
 
 execution_client_url = f"http://{config.EXECUTION_CLIENT_IP}:{config.EXECUTION_CLIENT_PORT}"
 
-# TODO: change url from infura
-infura_url = "https://mainnet.infura.io/v3/c2762ad3b91949a099c826439f9dc5c6"
-
 # init token standards
 token_standards = {}
 for token_standard in TokenStandard:
@@ -45,7 +42,13 @@ for token_standard in TokenStandard:
         token_standards[token_standard.name] = json.load(f)
 
 execution_client = ExecutionClientConnector(
-    infura_url, config.ETHERSCAN_URL, config.ETHERSCAN_API_KEY, token_standards, sql_db_connector, config.SQL_DATABASE_TABLE_CONTRACT)
+    execution_client_url, config.ETHERSCAN_URL, config.ETHERSCAN_API_KEY, token_standards, sql_db_connector, config.SQL_DATABASE_TABLE_CONTRACT)
+
+
+# TODO: remove when node is fully synced -> currently used for contract endpoints only
+infura_execution_client_url = f"{config.INFURA_URL}/{config.INFURA_API_KEY}"
+infura_execution_client = ExecutionClientConnector(
+    infura_execution_client_url, config.ETHERSCAN_URL, config.ETHERSCAN_API_KEY, token_standards, sql_db_connector, config.SQL_DATABASE_TABLE_CONTRACT)
 
 consensus_client = ConsensusClientConnector(
     config.CONSENCUS_CLIENT_IP, config.CONSENSUS_CLIENT_PORT)
@@ -597,7 +600,8 @@ async def execution_client_get_contract_abi(
     """
     Returns the Contract Application Binary Interface (ABI) of a verified smart contract.
     """
-    response = execution_client.get_contract_abi(contract_address)
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_contract_abi(contract_address)
 
     if response is None:
         raise HTTPException(
@@ -616,7 +620,8 @@ async def execution_client_get_contract_implemented_token_standards(
     """
     Return if token standards are implemented by contract Application Binary Interface (ABI).
     """
-    response = execution_client.get_contract_implemented_token_standards(
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_contract_implemented_token_standards(
         contract_address)
 
     if response is None:
@@ -637,7 +642,8 @@ async def execution_client_get_contract_functions(
     """
     Returns all contract functions.
     """
-    response = execution_client.get_all_contract_functions(
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_all_contract_functions(
         contract_address, as_abi)
 
     return response
@@ -652,7 +658,8 @@ async def execution_client_get_contract_events(
     """
     Returns all contract events.
     """
-    response = execution_client.get_all_contract_events(
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_all_contract_events(
         contract_address, as_abi)
 
     return response
@@ -671,7 +678,8 @@ async def execution_client_execute_contract_function(
 
     Will only work for call functions.
     """
-    response = execution_client.execute_contract_function(
+    # TODO: remove infura when syced
+    response = infura_execution_client.execute_contract_function(
         contract_address, function_name, *function_args)
 
     if response is None:
@@ -698,7 +706,8 @@ async def execution_client_get_token_events(
     * from_block (optional): first block to filter from
     * to_block (optional): last block to filter to
     """
-    response = execution_client.get_token_events(
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_token_events(
         contract_address, from_block, to_block)
 
     return response
@@ -736,7 +745,8 @@ async def execution_client_get_erc20_token_transfers(
     if value is not None:
         argument_filters["value"] = value
 
-    response = execution_client.get_token_transfers(
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_token_transfers(
         contract_address,
         from_block,
         to_block,
@@ -778,7 +788,8 @@ async def execution_client_get_erc721_token_transfers(
     if token_id is not None:
         argument_filters["tokenId"] = token_id
 
-    response = execution_client.get_token_transfers(
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_token_transfers(
         contract_address,
         from_block,
         to_block,
@@ -797,7 +808,8 @@ async def execution_client_get_contract_metadata(
     Return contract metadata.
     Metadata may be empty if functions are not implemented by contract.
     """
-    response = execution_client.get_contract_metadata(
+    # TODO: remove infura when syced
+    response = infura_execution_client.get_contract_metadata(
         contract_address)
 
     return response
