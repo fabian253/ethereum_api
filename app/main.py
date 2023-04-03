@@ -799,6 +799,70 @@ async def execution_client_get_erc721_token_transfers(
     return response
 
 
+@app.get("/execution_client/contract/get_erc20_contracts",
+         tags=["Execution Client Contract Methods"])
+async def execution_client_get_erc20_contracts(
+        with_name: bool = False,
+        with_symbol: bool = False,
+        with_total_supply: bool = False,
+        with_abi: bool = False,
+        limit: Union[int, None] = None,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Returns ERC20 contract data safed in indexing db.
+
+    * with_name (optional): include name in response
+    * with_symbol (optional): include name in response
+    * with_total_supply (optional): include name in response
+    * with_abi (optional): include name in response
+    * limit (optional): limit the number of returned contract data
+    """
+    if limit is None:
+        limit = 18446744073709551615
+
+    response = sql_db_connector.query_erc20_contracts(
+        config.SQL_DATABASE_TABLE_CONTRACT, with_name, with_symbol, with_total_supply, with_abi, limit)
+
+    if with_total_supply:
+        for data in response:
+            if data["total_supply"] is not None:
+                data["total_supply"] = str(data["total_supply"])
+
+    return response
+
+
+@app.get("/execution_client/contract/get_erc721_contracts",
+         tags=["Execution Client Contract Methods"])
+async def execution_client_get_erc721_contracts(
+        with_name: bool = False,
+        with_symbol: bool = False,
+        with_total_supply: bool = False,
+        with_abi: bool = False,
+        limit: Union[int, None] = None,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Returns ERC721 contract data safed in indexing db.
+
+    * with_name (optional): include name in response
+    * with_symbol (optional): include name in response
+    * with_total_supply (optional): include name in response
+    * with_abi (optional): include name in response
+    * limit (optional): limit the number of returned contract data
+    """
+    if limit is None:
+        limit = 18446744073709551615
+
+    response = sql_db_connector.query_erc721_contracts(
+        config.SQL_DATABASE_TABLE_CONTRACT, with_name, with_symbol, with_total_supply, with_abi, limit)
+
+    if with_total_supply:
+        for data in response:
+            if data["total_supply"] is not None:
+                data["total_supply"] = str(data["total_supply"])
+
+    return response
+
+
 @app.get("/execution_client/contract/get_contract_metadata",
          tags=["Execution Client Contract Methods"])
 async def execution_client_get_contract_metadata(
@@ -811,6 +875,8 @@ async def execution_client_get_contract_metadata(
     # TODO: remove infura when syced
     response = infura_execution_client.get_contract_metadata(
         contract_address)
+
+    response["total_supply"] = str(response["total_supply"])
 
     return response
 
