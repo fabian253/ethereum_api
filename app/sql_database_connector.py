@@ -7,19 +7,25 @@ from typing import Union
 class SqlDatabaseConnector:
 
     def __init__(self, host: str, port: int, user: str, password: str) -> None:
-        config = {
+        self.config = {
             'user': user,
             'password': password,
             'host': host,
             'port': port
         }
 
-        self.connection = mysql.connector.connect(**config)
+        self.connection = mysql.connector.connect(**self.config)
 
     def __del__(self):
         self.connection.close()
 
+    def connect(self, config: dict):
+        if not self.connection.is_connected():
+            self.connection = mysql.connector.connect(**config)
+
     def create_database(self, db_name: str):
+        self.connect(self.config)
+
         cursor = self.connection.cursor()
         try:
             cursor.execute(
@@ -30,6 +36,8 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def use_database(self, db_name: str):
+        self.connect(self.config)
+
         cursor = self.connection.cursor()
         try:
             cursor.execute(f"USE {db_name}")
@@ -45,6 +53,8 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def create_table(self, table_description: str):
+        self.connect(self.config)
+
         cursor = self.connection.cursor()
         try:
             print("Creating table: ", end='')
@@ -60,6 +70,8 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def insert_data(self, table_name: str, data: dict):
+        self.connect(self.config)
+
         cursor = self.connection.cursor()
         data_fields = ", ".join(data.keys())
         data_value_slots = ", ".join([f"%({key})s" for key in data.keys()])
@@ -73,6 +85,8 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def query_data(self, table_name: str, fields: Union[list, str] = "*", equal_filter: dict = None, limit: int = 1000) -> list:
+        self.connect(self.config)
+
         cursor = self.connection.cursor(dictionary=True, prepared=True)
 
         if fields == "*":
@@ -96,6 +110,8 @@ class SqlDatabaseConnector:
         return data_list
 
     def query_data_type(self, table_name: str):
+        self.connect(self.config)
+
         cursor = self.connection.cursor(dictionary=True, prepared=True)
 
         select_query = f"SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS where TABLE_NAME = '{table_name}'"
