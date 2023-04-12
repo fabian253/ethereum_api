@@ -84,6 +84,23 @@ class SqlDatabaseConnector:
 
         cursor.close()
 
+    def insert_many_data(self, table_name: str, many_data: list[dict]):
+        self.connect(self.config)
+
+        field_names = many_data[0].keys()
+
+        cursor = self.connection.cursor()
+        data_fields = ", ".join(field_names)
+        data_value_slots = ", ".join([f"%({key})s" for key in field_names])
+
+        insert_query = f"INSERT IGNORE INTO {table_name} ({data_fields}) VALUES ({data_value_slots})"
+
+        cursor.executemany(insert_query, many_data)
+
+        self.connection.commit()
+
+        cursor.close()
+
     def query_data(self, table_name: str, fields: Union[list, str] = "*", equal_filter: dict = None, limit: int = 1000) -> list:
         self.connect(self.config)
 
@@ -215,6 +232,31 @@ class SqlDatabaseConnector:
     def is_contract_in_db(self, table_name: str, contract_address: str) -> bool:
         contract = self.query_data(table_name, equal_filter={
                                    "contract_address": contract_address})
+
+        if len(contract) == 0:
+            return False
+        else:
+            return True
+
+    def insert_transaction_data(self, table_name: str, transaction_hash: str, contract_address: str, token_id: int, from_address: str, to_address: str, block_number: int):
+        if not self.is_transaction_in_db(table_name, transaction_hash):
+            data = {
+                "transaction_hash": transaction_hash,
+                "contract_address": contract_address,
+                "token_id": token_id,
+                "from_address": from_address,
+                "to_address": to_address,
+                "block_number": block_number
+            }
+
+            self.insert_data(table_name, data)
+
+    def insert_many_transaction_data(self, table_name: str, transaction_data: list[dict]):
+        self.insert_many_data(table_name, transaction_data)
+
+    def is_transaction_in_db(self, table_name: str, transaction_hash: str) -> bool:
+        contract = self.query_data(table_name, equal_filter={
+                                   "transaction_hash": transaction_hash})
 
         if len(contract) == 0:
             return False
