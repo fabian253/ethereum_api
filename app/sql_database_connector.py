@@ -6,7 +6,7 @@ from typing import Union
 
 class SqlDatabaseConnector:
 
-    def __init__(self, host: str, port: int, user: str, password: str) -> None:
+    def __init__(self, host: str, port: int, user: str, password: str, db_name: str) -> None:
         self.config = {
             'user': user,
             'password': password,
@@ -15,6 +15,9 @@ class SqlDatabaseConnector:
         }
 
         self.connection = mysql.connector.connect(**self.config)
+
+        self.db_name = db_name
+        self.use_database(db_name)
 
     def __del__(self):
         self.connection.close()
@@ -53,7 +56,7 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def create_table(self, table_description: str):
-        self.connect(self.config)
+        self.use_database(self.db_name)
 
         cursor = self.connection.cursor()
         try:
@@ -70,7 +73,7 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def insert_data(self, table_name: str, data: dict):
-        self.connect(self.config)
+        self.use_database(self.db_name)
 
         cursor = self.connection.cursor()
         data_fields = ", ".join(data.keys())
@@ -85,7 +88,7 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def insert_many_data(self, table_name: str, many_data: list[dict]):
-        self.connect(self.config)
+        self.use_database(self.db_name)
 
         field_names = many_data[0].keys()
 
@@ -102,7 +105,7 @@ class SqlDatabaseConnector:
         cursor.close()
 
     def query_data(self, table_name: str, fields: Union[list, str] = "*", equal_filter: dict = None, limit: int = 1000) -> list:
-        self.connect(self.config)
+        self.use_database(self.db_name)
 
         cursor = self.connection.cursor(dictionary=True, prepared=True)
 
@@ -127,7 +130,7 @@ class SqlDatabaseConnector:
         return data_list
 
     def query_data_type(self, table_name: str):
-        self.connect(self.config)
+        self.use_database(self.db_name)
 
         cursor = self.connection.cursor(dictionary=True, prepared=True)
 
