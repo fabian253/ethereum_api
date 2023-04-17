@@ -27,10 +27,13 @@ sql_db_connector = SqlDatabaseConnector(
     config.SQL_DATABASE_HOST,
     config.SQL_DATABASE_PORT,
     config.SQL_DATABASE_USER,
-    config.SQL_DATABASE_PASSWORD
+    config.SQL_DATABASE_PASSWORD,
+    config.SQL_DATABASE_NAME
 )
 sql_db_connector.use_database(config.SQL_DATABASE_NAME)
+# TODO: insert create db
 sql_db_connector.create_table(tables.CONTRACT_TABLE)
+sql_db_connector.create_table(tables.TRANSACTION_TABLE)
 
 
 execution_client_url = f"http://{config.EXECUTION_CLIENT_IP}:{config.EXECUTION_CLIENT_PORT}"
