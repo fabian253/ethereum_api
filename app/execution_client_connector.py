@@ -1,6 +1,6 @@
 from web3 import Web3
 from web3._utils.empty import Empty
-from web3.exceptions import BlockNotFound, TransactionNotFound, NoABIFound
+from web3.exceptions import BlockNotFound, TransactionNotFound, NoABIFound, ABIEventFunctionNotFound
 import json
 import requests
 from enum import Enum
@@ -8,6 +8,8 @@ from os import listdir
 from typing import Union
 from app.sql_database_connector import SqlDatabaseConnector
 
+
+timeout = 60
 
 TokenStandard = Enum("TokenStandard", [(token_standard.replace(
     ".json", ""), token_standard.replace(
@@ -28,7 +30,8 @@ class ExecutionClientConnector:
         self.etherscan_api_key = etherscan_api_key
         self.token_standards = token_standards
         # init execution client
-        self.execution_client = Web3(Web3.HTTPProvider(execution_client_url))
+        self.execution_client = Web3(Web3.HTTPProvider(
+            execution_client_url, request_kwargs={'timeout': timeout}))
         # set sql db connector
         self.sql_db_connector = sql_db_connector
         self.contract_table_name = contract_table_name
@@ -424,10 +427,10 @@ class ExecutionClientConnector:
         """
         return self.get_contract_events_by_name(contract_address, "Transfer", from_block, to_block, argument_filters)
 
-    def get_token_events(self,
-                         contract_address: str,
-                         from_block: Union[int, str] = 0,
-                         to_block: Union[int, str] = "latest"):
+    def get_contract_events(self,
+                            contract_address: str,
+                            from_block: Union[int, str] = 0,
+                            to_block: Union[int, str] = "latest"):
         contract_event_list = []
 
         # create event object
@@ -465,6 +468,29 @@ class ExecutionClientConnector:
                 pass
 
         return contract_event_list
+
+    def get_contract_mint_block(self, contract_address: str):
+        try:
+            event_filter = self.execution_client.eth.filter({
+                "fromBlock": 0,
+                "toBlock": "latest",
+                "address": contract_address
+            })
+
+            response = event_filter.get_all_entries()
+
+            if len(response) == 0:
+                return None
+
+            response = response[0]["blockNumber"]
+
+            return response
+
+        except ValueError as e:
+            if "data" in e.args[0].keys():
+                return int(e.args[0]["data"]["from"], 16)
+            else:
+                return None
 
     def get_contract_metadata(self, contract_address: str, contract_abi=None):
         try:

@@ -710,7 +710,7 @@ async def execution_client_get_token_events(
     * to_block (optional): last block to filter to
     """
     # TODO: remove infura when syced
-    response = infura_execution_client.get_token_events(
+    response = infura_execution_client.get_contract_events(
         contract_address, from_block, to_block)
 
     return response
@@ -864,6 +864,25 @@ async def execution_client_get_erc721_contracts(
                 data["total_supply"] = str(data["total_supply"])
 
     return response
+
+
+@app.get("/execution_client/contract/get_contract_mint_block",
+         tags=["Execution Client Contract Methods"])
+async def execution_client_get_contract_mint_block(
+        contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
+        current_user: User = Depends(get_current_active_user)):
+    """
+    Return block number of creation of contract.
+
+    Returns null if no events are performed for the contract.
+    """
+    response = infura_execution_client.get_contract_mint_block(
+        contract_address)
+
+    return {
+        "contract_address": contract_address,
+        "block_number": response
+    }
 
 
 @app.get("/execution_client/contract/get_contract_metadata",

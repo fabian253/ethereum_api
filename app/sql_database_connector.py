@@ -169,14 +169,15 @@ class SqlDatabaseConnector:
 
         # convert tinyint to boolean and decode json
         for column, data_type in data_types.items():
-            if data_type == "tinyint":
-                data[column] = True if data[column] == 1 else False
+            if data[column] is not None:
+                if data_type == "tinyint":
+                    data[column] = True if data[column] == 1 else False
 
-            if data_type == "json":
-                data[column] = json.loads(data[column].decode("utf-8"))
+                if data_type == "json":
+                    data[column] = json.loads(data[column].decode("utf-8"))
 
-            if data_type == "varchar" and data[column].isdigit():
-                data[column] = int(data[column])
+                if data_type == "varchar" and data[column].isdigit():
+                    data[column] = int(data[column])
 
         return data
 
