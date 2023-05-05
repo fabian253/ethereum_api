@@ -87,7 +87,7 @@ class SqlDatabaseConnector:
 
         cursor.close()
 
-    def insert_many_data(self, table_name: str, many_data: list[dict]):
+    def insert_many_data(self, table_name: str, many_data: list[dict], batch_size: int = 10000):
         self.use_database(self.db_name)
 
         field_names = many_data[0].keys()
@@ -98,9 +98,22 @@ class SqlDatabaseConnector:
 
         insert_query = f"INSERT IGNORE INTO {table_name} ({data_fields}) VALUES ({data_value_slots})"
 
-        cursor.executemany(insert_query, many_data)
+        if len(many_data) > batch_size:
+            batch_start = 0
+            batch_end = batch_size
 
-        self.connection.commit()
+            while batch_end != len(many_data)+1:
+                batch = many_data[batch_start:batch_end]
+
+                batch_start = batch_end
+                batch_end = (batch_start + batch_size) if (batch_start +
+                                                           batch_size) <= len(many_data) else len(many_data)+1
+
+                cursor.executemany(insert_query, batch)
+                self.connection.commit()
+        else:
+            cursor.executemany(insert_query, batch)
+            self.connection.commit()
 
         cursor.close()
 
