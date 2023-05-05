@@ -903,21 +903,21 @@ async def execution_client_get_contract_metadata(
     return response
 
 
-@app.put("/execution_client/contract/insert_contract_transactions",
+@app.put("/execution_client/contract/insert_erc721_contract_transactions",
          tags=["Execution Client Contract Methods"],
          status_code=status.HTTP_201_CREATED)
-async def execution_client_put_contract_transactions(contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
-                                                     from_block: Union[int,
-                                                                       str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
-                                                     to_block: Union[int,
-                                                                     str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
-                                                     from_address: Union[str,
-                                                                         None] = ERC721_TOKEN_TRANSFERS_FROM_ADDRESS_QUERY_PARAMETER,
-                                                     to_address: Union[str,
-                                                                       None] = ERC721_TOKEN_TRANSFERS_TO_ADDRESS_QUERY_PARAMETER,
-                                                     token_id: Union[int,
-                                                                     None] = ERC721_TOKEN_TRANSFERS_TOKEN_ID_QUERY_PARAMETER,
-                                                     current_user: User = Depends(get_current_active_user)):
+async def execution_client_put_erc721_contract_transactions(contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
+                                                            from_block: Union[int,
+                                                                              str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
+                                                            to_block: Union[int,
+                                                                            str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
+                                                            from_address: Union[str,
+                                                                                None] = ERC721_TOKEN_TRANSFERS_FROM_ADDRESS_QUERY_PARAMETER,
+                                                            to_address: Union[str,
+                                                                              None] = ERC721_TOKEN_TRANSFERS_TO_ADDRESS_QUERY_PARAMETER,
+                                                            token_id: Union[int,
+                                                                            None] = ERC721_TOKEN_TRANSFERS_TOKEN_ID_QUERY_PARAMETER,
+                                                            current_user: User = Depends(get_current_active_user)):
     """
     Insert contract transactions into sql database.
 
@@ -948,6 +948,60 @@ async def execution_client_put_contract_transactions(contract_address: str = ERC
             "transaction_hash": transaction["transactionHash"],
             "contract_address": transaction["address"],
             "token_id": transaction["args"]["tokenId"],
+            "from_address": transaction["args"]["from"],
+            "to_address": transaction["args"]["to"],
+            "block_number": transaction["blockNumber"]
+        }
+
+    sql_db_connector.insert_many_transaction_data(
+        config.SQL_DATABASE_TABLE_TRANSACTION, transactions)
+
+
+@app.put("/execution_client/contract/insert_erc20_contract_transactions",
+         tags=["Execution Client Contract Methods"],
+         status_code=status.HTTP_201_CREATED)
+async def execution_client_put_erc20_contract_transactions(contract_address: str = ERC20_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
+                                                           from_block: Union[int,
+                                                                             str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
+                                                           to_block: Union[int,
+                                                                           str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
+                                                           from_address: Union[str,
+                                                                               None] = ERC20_TOKEN_TRANSFERS_FROM_ADDRESS_QUERY_PARAMETER,
+                                                           to_address: Union[str,
+                                                                             None] = ERC20_TOKEN_TRANSFERS_TO_ADDRESS_QUERY_PARAMETER,
+                                                           value: Union[int,
+                                                                        None] = ERC20_TOKEN_TRANSFERS_VALUE_QUERY_PARAMETER,
+                                                           current_user: User = Depends(get_current_active_user)):
+    """
+    Insert contract transactions into sql database.
+
+    * from_block (optional): first block to filter from
+    * to_block (optional): last block to filter to
+    * from_address (optional): from address of the transfer
+    * to_address (optional): to address of the transfer
+    * value (optional): value of the transfer
+    """
+    argument_filters = {}
+    if from_address is not None:
+        argument_filters["from"] = from_address
+    if to_address is not None:
+        argument_filters["to"] = to_address
+    if value is not None:
+        argument_filters["value"] = value
+
+    # TODO: remove infura when syced
+    transactions = infura_execution_client.get_token_transfers(
+        contract_address,
+        from_block,
+        to_block,
+        argument_filters
+    )
+
+    for index, transaction in enumerate(transactions):
+        transactions[index] = {
+            "transaction_hash": transaction["transactionHash"],
+            "contract_address": transaction["address"],
+            "value": transaction["args"]["value"],
             "from_address": transaction["args"]["from"],
             "to_address": transaction["args"]["to"],
             "block_number": transaction["blockNumber"]
