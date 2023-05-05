@@ -23,6 +23,7 @@ TRANSACTION_TABLE = (
     "transaction_hash char(66) PRIMARY KEY UNIQUE NOT NULL,"
     "contract_address char(42) NOT NULL,"
     "token_id int DEFAULT NULL,"
+    "value varchar(100) DEFAULT NULL,"
     "from_address char(42) NOT NULL,"
     "to_address char(42) NOT NULL,"
     "block_number int NOT NULL"
