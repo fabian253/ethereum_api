@@ -6,14 +6,20 @@ import requests
 from enum import Enum
 from os import listdir
 from typing import Union
-from app.sql_database_connector import SqlDatabaseConnector
+from app.connectors.sql_database_connector import SqlDatabaseConnector
 
 
 timeout = 60
 
+# init token standards
 TokenStandard = Enum("TokenStandard", [(token_standard.replace(
     ".json", ""), token_standard.replace(
-    ".json", "")) for token_standard in listdir(f"app/token_standard")])
+    ".json", "")) for token_standard in listdir(f"app/token_standard") if token_standard.endswith(".json")])
+
+token_standards = {}
+for token_standard in TokenStandard:
+    with open(f"app/token_standard/{token_standard.name}.json", "r") as f:
+        token_standards[token_standard.name] = json.load(f)
 
 
 class ExecutionClientConnector:
@@ -22,19 +28,25 @@ class ExecutionClientConnector:
                  execution_client_url,
                  etherscan_ip: str,
                  etherscan_api_key: str,
-                 token_standards: dict,
                  sql_db_connector: SqlDatabaseConnector,
                  contract_table_name: str
                  ) -> None:
+        # execution client params
+        self.execution_client_url = execution_client_url
+        self.token_standards = token_standards
+        # set etherscan api params
         self.etherscan_ip = etherscan_ip
         self.etherscan_api_key = etherscan_api_key
-        self.token_standards = token_standards
-        # init execution client
-        self.execution_client = Web3(Web3.HTTPProvider(
-            execution_client_url, request_kwargs={'timeout': timeout}))
         # set sql db connector
         self.sql_db_connector = sql_db_connector
         self.contract_table_name = contract_table_name
+        # connect to execution client
+        self.__connect()
+
+    def __connect(self):
+        # init execution client
+        self.execution_client = Web3(Web3.HTTPProvider(
+            self.execution_client_url, request_kwargs={'timeout': timeout}))
 
     # Gossip methods
 
@@ -200,6 +212,7 @@ class ExecutionClientConnector:
 
     def get_transaction(self, transaction_hash: str, decode_input: bool = True):
         # TODO: improve decode input
+        # TODO: why is abi needed?
         try:
             response = self.execution_client.eth.get_transaction(
                 transaction_hash)
@@ -267,11 +280,11 @@ class ExecutionClientConnector:
         Query from db if in db else query from etherscan (no other way)
         """
         if self.sql_db_connector.is_contract_in_db(self.contract_table_name, contract_address):
-            contract_data = self.sql_db_connector.query_contract_data(
+            contract_data = self.sql_db_connector.query_all_contract_data(
                 self.contract_table_name, contract_address)
             return contract_data["abi"]
         else:
-            # TODO: find other way than etherscan
+            # contract abi can not be retrieved from blockchain (not with get_code()) -> etherscan is needed
             params = {
                 "module": "contract",
                 "action": "getabi",
@@ -469,7 +482,7 @@ class ExecutionClientConnector:
 
         return contract_event_list
 
-    def get_contract_mint_block(self, contract_address: str):
+    def get_contract_deploy_block(self, contract_address: str):
         try:
             event_filter = self.execution_client.eth.filter({
                 "fromBlock": 0,
