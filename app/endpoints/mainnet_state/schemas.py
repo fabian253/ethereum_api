@@ -45,3 +45,8 @@ class ResponseModelTransactionCount(BaseModel):
 class ResponseModelEstimateGas(BaseModel):
     # TODO: not implemented because Enpoint is not working
     pass
+
+
+class ErrorResponseModel(BaseModel):
+    status_code: int
+    detail: str

@@ -5,15 +5,17 @@ from .schemas import *
 from .parameters import *
 from typing import Union
 from app.connectors import execution_client, infura_execution_client, sql_db_connector, TokenStandard
+from app.api_params.api_decorators import *
 
 router = APIRouter(
     prefix="/mainnet/contract",
     tags=["Smart Contract"],
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(get_current_active_user)],
+    responses={503: {"description": "Node not available"}}
 )
 
 
-@router.get("/token_standard_abi")
+@router.get("/token_standard_abi", responses={503: {"model": ErrorResponseModel}})
 async def token_standard_abi(
         token_standard: TokenStandard = TOKEN_STANDARD_QUERY_PARAMETER):
     """
@@ -35,7 +37,8 @@ async def token_standard_abi(
     return response
 
 
-@router.get("/contract_abi")
+@router.get("/contract_abi", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def contract_abi(
         contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER):
     """
@@ -53,7 +56,8 @@ async def contract_abi(
     return response
 
 
-@router.get("/implemented_token_standards")
+@router.get("/implemented_token_standards", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def contract_implemented_token_standards(
         contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER):
     """
@@ -72,7 +76,8 @@ async def contract_implemented_token_standards(
     return response
 
 
-@router.get("/contract_functions")
+@router.get("/contract_functions", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def contract_functions(
         contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
         as_abi: bool = AS_ABI_QUERY_PARAMETER):
@@ -86,7 +91,8 @@ async def contract_functions(
     return response
 
 
-@router.get("/contract_events")
+@router.get("/contract_events", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def contract_events(
         contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
         as_abi: bool = AS_ABI_QUERY_PARAMETER):
@@ -100,7 +106,8 @@ async def contract_events(
     return response
 
 
-@router.get("/execute_contract_function")
+@router.get("/execute_contract_function", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def execute_contract_function(
         contract_address: str = CONTRACT_ADDRESS_QUERY_PARAMETER,
         function_name: str = CONTRACT_FUNCTION_QUERY_PARAMETER,
@@ -124,7 +131,8 @@ async def execute_contract_function(
     return {function_name: response}
 
 
-@router.get("/token_events")
+@router.get("/token_events", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def token_events(
         contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
         from_block: Union[int,
@@ -144,7 +152,8 @@ async def token_events(
     return response
 
 
-@router.get("/erc20_token_transfers")
+@router.get("/erc20_token_transfers", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def erc20_token_transfers(
         contract_address: str = ERC20_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
         from_block: Union[int,
@@ -185,7 +194,8 @@ async def erc20_token_transfers(
     return response
 
 
-@router.get("/erc721_token_transfers")
+@router.get("/erc721_token_transfers", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def erc721_token_transfers(
         contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
         from_block: Union[int,
@@ -226,7 +236,8 @@ async def erc721_token_transfers(
     return response
 
 
-@router.get("/erc20_contracts")
+@router.get("/erc20_contracts", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def erc20_contracts(
         with_name: bool = False,
         with_symbol: bool = False,
@@ -257,7 +268,8 @@ async def erc20_contracts(
     return response
 
 
-@router.get("/erc721_contracts")
+@router.get("/erc721_contracts", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def erc721_contracts(
         with_name: bool = False,
         with_symbol: bool = False,
@@ -288,7 +300,8 @@ async def erc721_contracts(
     return response
 
 
-@router.get("/contract_deploy_block")
+@router.get("/contract_deploy_block", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def contract_deploy_block(
         contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER):
     """
@@ -304,7 +317,8 @@ async def contract_deploy_block(
     }
 
 
-@router.get("/contract_metadata")
+@router.get("/contract_metadata", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def contract_metadata(
         contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER):
     """
@@ -321,7 +335,8 @@ async def contract_metadata(
 
 
 @router.put("/insert_erc721_contract_transactions",
-            status_code=status.HTTP_201_CREATED)
+            status_code=status.HTTP_201_CREATED, responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def erc721_contract_transactions(contract_address: str = ERC721_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
                                        from_block: Union[int,
                                                          str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
@@ -374,7 +389,8 @@ async def erc721_contract_transactions(contract_address: str = ERC721_TOKEN_TRAN
 
 
 @router.put("/insert_erc20_contract_transactions",
-            status_code=status.HTTP_201_CREATED)
+            status_code=status.HTTP_201_CREATED, responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def erc20_contract_transactions(contract_address: str = ERC20_TOKEN_TRANSFERS_CONTRACT_ADDRESS_QUERY_PARAMETER,
                                       from_block: Union[int,
                                                         str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,

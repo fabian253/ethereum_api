@@ -225,3 +225,8 @@ class ResponseModelSyncing(BaseModel):
         el_offline: bool
 
     data: Data
+
+
+class ErrorResponseModel(BaseModel):
+    status_code: int
+    detail: str

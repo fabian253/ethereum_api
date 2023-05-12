@@ -5,6 +5,7 @@ from .parameters import *
 from .utils import *
 from typing import Union
 from app.connectors import execution_client
+from app.api_params.api_decorators import *
 
 router = APIRouter(
     prefix="/evaluation",
@@ -13,7 +14,8 @@ router = APIRouter(
 )
 
 
-@router.get("/evaluate_block_request_time")
+@router.get("/evaluate_block_request_time", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def evaluate_block_request_time(
         block_identifier_list: list[Union[int, str]
                                     ] = BLOCK_IDENTIFIER_LIST_QUERY_PARAMETER,
@@ -29,7 +31,8 @@ async def evaluate_block_request_time(
     return response
 
 
-@router.get("/evaluate_transaction_request_time")
+@router.get("/evaluate_transaction_request_time", responses={503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def evaluate_block_request_time(
         transaction_hash_list: list[str] = TRANSACTION_HASH_LIST_QUERY_PARAMETER):
     """

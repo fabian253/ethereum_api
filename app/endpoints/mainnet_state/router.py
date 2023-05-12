@@ -3,15 +3,18 @@ from app.dependencies import get_current_active_user
 from .schemas import *
 from .parameters import *
 from app.connectors import execution_client
+from app.api_params.api_decorators import *
 
 router = APIRouter(
     prefix="/mainnet/state",
     tags=["Mainnet State"],
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(get_current_active_user)],
+    responses={503: {"description": "Node not available"}}
 )
 
 
-@router.get("/block_number", response_model=ResponseModelBlockNumber)
+@router.get("/block_number", responses={200: {"model": ResponseModelBlockNumber}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def block_number():
     """
     Returns the number of most recent block.
@@ -20,7 +23,8 @@ async def block_number():
     return response
 
 
-@router.get("/default_account", response_model=ResponseModelDefaultAccount)
+@router.get("/default_account", responses={200: {"model": ResponseModelDefaultAccount}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def default_account():
     """
     Returns the ethereum address that will be used as the default from address for all transactions.
@@ -31,7 +35,8 @@ async def default_account():
     return response
 
 
-@router.get("/default_block", response_model=ResponseModelDefaultBlock)
+@router.get("/default_block", responses={200: {"model": ResponseModelDefaultBlock}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def default_block():
     """
     Returns the default block number that will be used for any RPC methods that accept a block identifier.
@@ -42,7 +47,8 @@ async def default_block():
     return response
 
 
-@router.get("/max_priority_fee", response_model=ResponseModelMaxPriorityFee)
+@router.get("/max_priority_fee", responses={200: {"model": ResponseModelMaxPriorityFee}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def max_priority_fee():
     """
     Returns a suggestion for a max priority fee for dynamic fee transactions in Wei.
@@ -51,7 +57,8 @@ async def max_priority_fee():
     return response
 
 
-@router.get("/accounts", response_model=ResponseModelAccounts)
+@router.get("/accounts", responses={200: {"model": ResponseModelAccounts}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def accounts():
     """
     Returns the list of known accounts.
@@ -60,7 +67,8 @@ async def accounts():
     return response
 
 
-@router.get("/chain_id", response_model=ResponseModelChainId)
+@router.get("/chain_id", responses={200: {"model": ResponseModelChainId}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def chain_id():
     """
     Returns an integer value for the currently configured “Chain Id” value introduced in EIP-155.
@@ -72,7 +80,8 @@ async def chain_id():
     return response
 
 
-@router.get("/balance", response_model=ResponseModelBalance)
+@router.get("/balance", responses={200: {"model": ResponseModelBalance}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def balance(
         wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
         block_identifier: Union[int, str,
@@ -87,7 +96,8 @@ async def balance(
     return response
 
 
-@router.get("/storage_at", response_model=ResponseModelStorageAt)
+@router.get("/storage_at", responses={200: {"model": ResponseModelStorageAt}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def storage_at(
         wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
         position: int = POSITION_QUERY_PARAMETER,
@@ -104,7 +114,8 @@ async def storage_at(
     return response
 
 
-@router.get("/code", response_model=ResponseModelCode)
+@router.get("/code", responses={200: {"model": ResponseModelCode}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def code(
         wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
 ):
@@ -117,7 +128,8 @@ async def code(
     return response
 
 
-@router.get("/transaction_count", response_model=ResponseModelTransactionCount)
+@router.get("/transaction_count", responses={200: {"model": ResponseModelTransactionCount}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def transaction_count(
         wallet_address: str = WALLET_ADDRESS_QUERY_PARAMETER,
         block_identifier: Union[int, str,
@@ -133,7 +145,8 @@ async def transaction_count(
     return reponse
 
 
-@router.get("/estimate_gas", response_model=ResponseModelEstimateGas)
+@router.get("/estimate_gas", responses={200: {"model": ResponseModelEstimateGas}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def estimate_gas(
         from_address: str = FROM_ADDRESS_QUERY_PARAMETER,
         to_address: str = TO_ADDRESS_QUERY_PARAMETER,

@@ -1,5 +1,6 @@
 import mysql.connector
 from mysql.connector import errorcode
+from mysql.connector.errors import DatabaseError
 import json
 from typing import Union
 import logging
@@ -20,26 +21,36 @@ class SqlDatabaseConnector:
             'host': host,
             'port': port
         }
-        self.connect(self.config)
-
         self.db_name = db_name
-        self.use_database(db_name)
 
-        for table in tables:
-            self.create_table(table)
+        self.connection = None
+        try:
+            self.connect(self.config)
+
+            self.db_name = db_name
+            self.use_database(db_name)
+
+            for table in tables:
+                self.create_table(table)
+        except DatabaseError:
+            pass
 
     def __del__(self):
-        self.connection.close()
+        if self.connection is not None:
+            self.connection.close()
 
     # General Functions
 
     def connect(self, config: Union[dict, None] = None):
-        if config is not None:
-            self.connection = mysql.connector.connect(**config)
-            logging.info("SQL server connected")
-        elif not self.connection.is_connected():
-            self.connection = mysql.connector.connect(**self.config)
-            logging.info("SQL server connected")
+        try:
+            if config is not None:
+                self.connection = mysql.connector.connect(**config)
+                logging.info("SQL server connected")
+            elif self.connection is None or not self.connection.is_connected():
+                self.connection = mysql.connector.connect(**self.config)
+                logging.info("SQL server connected")
+        except DatabaseError:
+            raise DatabaseError("Database not available")
 
     def create_database(self, db_name: str):
         self.connect()

@@ -293,3 +293,8 @@ class ResponseModelVoluntaryExists(BaseModel):
         pass
 
     data: List
+
+
+class ErrorResponseModel(BaseModel):
+    status_code: int
+    detail: str

@@ -40,10 +40,6 @@ class ExecutionClientConnector:
         # set sql db connector
         self.sql_db_connector = sql_db_connector
         self.contract_table_name = contract_table_name
-        # connect to execution client
-        self.__connect()
-
-    def __connect(self):
         # init execution client
         self.execution_client = Web3(Web3.HTTPProvider(
             self.execution_client_url, request_kwargs={'timeout': timeout}))
@@ -76,7 +72,7 @@ class ExecutionClientConnector:
         if response == False:
             return {"syncing": False}
 
-        return json.loads(Web3.toJSON(response))
+        return json.loads(Web3.to_json(response))
 
     def coinbase(self):
         response = self.execution_client.eth.coinbase
@@ -208,7 +204,7 @@ class ExecutionClientConnector:
         except (BlockNotFound, ValueError):
             return None
 
-        return json.loads(Web3.toJSON(response))
+        return json.loads(Web3.to_json(response))
 
     def get_transaction(self, transaction_hash: str, decode_input: bool = True):
         # TODO: improve decode input
@@ -217,7 +213,7 @@ class ExecutionClientConnector:
             response = self.execution_client.eth.get_transaction(
                 transaction_hash)
 
-            response = json.loads(Web3.toJSON(response))
+            response = json.loads(Web3.to_json(response))
 
             if decode_input and response["input"] != "0x":
                 contract_address = response["to"]
@@ -249,7 +245,7 @@ class ExecutionClientConnector:
         except (TransactionNotFound, ValueError):
             return None
 
-        return json.loads(Web3.toJSON(response))
+        return json.loads(Web3.to_json(response))
 
     def get_transaction_receipt(self, transaction_hash):
         try:
@@ -258,7 +254,7 @@ class ExecutionClientConnector:
         except (TransactionNotFound, ValueError):
             return None
 
-        return json.loads(Web3.toJSON(response))
+        return json.loads(Web3.to_json(response))
 
     def get_uncle_by_block(self, block_identifier, uncle_index):
         try:
@@ -267,7 +263,7 @@ class ExecutionClientConnector:
         except (BlockNotFound, ValueError):
             return None
 
-        return json.loads(Web3.toJSON(response))
+        return json.loads(Web3.to_json(response))
 
     # Contract methods
 
@@ -414,7 +410,7 @@ class ExecutionClientConnector:
                 response = event_filter.get_all_entries()
 
                 contract_event_list.extend(
-                    json.loads(Web3.toJSON(response)))
+                    json.loads(Web3.to_json(response)))
 
                 if batch_to_block == to_block:
                     more_batches = False
@@ -466,7 +462,7 @@ class ExecutionClientConnector:
                 response = event_filter.get_all_entries()
 
                 contract_event_list.extend(
-                    json.loads(Web3.toJSON(response)))
+                    json.loads(Web3.to_json(response)))
 
                 if batch_to_block == to_block:
                     more_batches = False

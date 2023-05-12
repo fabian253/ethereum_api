@@ -4,16 +4,19 @@ from .schemas import *
 from .parameters import *
 from typing import Union
 from app.connectors import execution_client
+from app.api_params.api_decorators import *
 
 router = APIRouter(
     prefix="/mainnet/history",
     tags=["Mainnet History"],
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(get_current_active_user)],
+    responses={503: {"description": "Node not available"}}
 )
 
 
 @router.get("/uncle_count",
-            responses={200: {"model": ResponseModelGetUncleCount}, 400: {"model": ErrorResponseModel}})
+            responses={200: {"model": ResponseModelGetUncleCount}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def uncle_count(
         block_identifier: Union[int,
                                 str] = BLOCK_IDENTIFIER_UNCLE_QUERY_PARAMETER):
@@ -35,7 +38,8 @@ async def uncle_count(
 
 
 @router.get("/uncle_by_block",
-            responses={200: {"model": ResponseModelGetUncleByBlock}, 400: {"model": ErrorResponseModel}})
+            responses={200: {"model": ResponseModelGetUncleByBlock}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def uncle_by_block(
         block_identifier: Union[int,
                                 str] = BLOCK_IDENTIFIER_UNCLE_QUERY_PARAMETER,
@@ -59,7 +63,8 @@ async def uncle_by_block(
 
 
 @router.get("/block",
-            responses={200: {"model": Union[ResponseModelGetBlockFalse, ResponseModelGetBlockTrue]}, 400: {"model": ErrorResponseModel}})
+            responses={200: {"model": Union[ResponseModelGetBlockFalse, ResponseModelGetBlockTrue]}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def block(
         block_identifier: Union[int, str,
                                 None] = BLOCK_IDENTIFIER_OPTIONAL_QUERY_PARAMETER,
@@ -84,7 +89,8 @@ async def block(
 
 
 @router.get("/transaction",
-            responses={200: {"model": ResponseModelGetTransaction}, 400: {"model": ErrorResponseModel}})
+            responses={200: {"model": ResponseModelGetTransaction}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def transaction(
         transaction_hash: str = TRANSACTION_HASH_QUERY_PARAMETER):
     """
@@ -104,7 +110,8 @@ async def transaction(
 
 
 @router.get("/transaction_by_block",
-            responses={200: {"model": ResponseModelGetTransactionByBlock}, 400: {"model": ErrorResponseModel}})
+            responses={200: {"model": ResponseModelGetTransactionByBlock}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def transaction_by_block(
         block_identifier: Union[int, str] = BLOCK_IDENTIFIER_QUERY_PARAMETER,
         transaction_index: int = TRANSACTION_INDEX_QUERY_PARAMETER):
@@ -127,7 +134,8 @@ async def transaction_by_block(
 
 
 @router.get("/block_transaction_count",
-            responses={200: {"model": ResponseModelGetBlockTransactionCount}, 400: {"model": ErrorResponseModel}})
+            responses={200: {"model": ResponseModelGetBlockTransactionCount}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def block_transaction_count(
         block_identifier: Union[int, str] = BLOCK_IDENTIFIER_QUERY_PARAMETER):
     """
@@ -148,7 +156,8 @@ async def block_transaction_count(
 
 
 @router.get("/transaction_receipt",
-            responses={200: {"model": ResponseModelGetTransactionReceipt}, 400: {"model": ErrorResponseModel}})
+            responses={200: {"model": ResponseModelGetTransactionReceipt}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def transaction_receipt(
         transaction_hash: str = TRANSACTION_HASH_QUERY_PARAMETER):
     """

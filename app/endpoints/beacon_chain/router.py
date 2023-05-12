@@ -4,6 +4,7 @@ from .schemas import *
 from .parameters import *
 from typing import Union
 from app.connectors import consensus_client
+from app.api_params.api_decorators import *
 
 router = APIRouter(
     prefix="/beacon",
@@ -12,7 +13,8 @@ router = APIRouter(
 )
 
 
-@router.get("/genesis", response_model=ResponseModelGenesis)
+@router.get("/genesis", responses={200: {"model": ResponseModelGenesis}, 503: {"model": ErrorResponseModel}})
+@connection_decorator
 async def genesis():
     """
     Retrieve details of the chain's genesis which can be used to identify chain.
@@ -21,7 +23,7 @@ async def genesis():
     return response
 
 
-@router.get("/hash_root", response_model=ResponseModelHashRoot)
+@router.get("/hash_root", responses={200: {"model": ResponseModelHashRoot}, 503: {"model": ErrorResponseModel}})
 async def hash_root(
         state_id: str = "head"):
     """
@@ -31,7 +33,7 @@ async def hash_root(
     return response
 
 
-@router.get("/fork_data", response_model=ResponseModelForkData)
+@router.get("/fork_data", responses={200: {"model": ResponseModelForkData}, 503: {"model": ErrorResponseModel}})
 async def fork_data(
         state_id: str = "head"):
     """
@@ -41,7 +43,7 @@ async def fork_data(
     return response
 
 
-@router.get("/finality_checkpoint", response_model=ResponseModelFinalityCheckpoint)
+@router.get("/finality_checkpoint", responses={200: {"model": ResponseModelFinalityCheckpoint}, 503: {"model": ErrorResponseModel}})
 async def finality_checkpoint(
         state_id: str = "head"):
     """
@@ -51,7 +53,7 @@ async def finality_checkpoint(
     return response
 
 
-@router.get("/validators", response_model=ResponseModelValidators)
+@router.get("/validators", responses={200: {"model": ResponseModelValidators}, 503: {"model": ErrorResponseModel}})
 async def validators(
         state_id: str = STATE_ID_QUERY_PARAMETER):
     """
@@ -64,7 +66,7 @@ async def validators(
     return response
 
 
-@router.get("/validator", response_model=ResponseModelValidator)
+@router.get("/validator", responses={200: {"model": ResponseModelValidator}, 503: {"model": ErrorResponseModel}})
 async def validator(
         validator_id: int = VALIDATOR_ID_QUERY_PARAMETER,
         state_id: str = STATE_ID_QUERY_PARAMETER):
@@ -75,7 +77,7 @@ async def validator(
     return response
 
 
-@router.get("/validator_balances", response_model=ResponseModelValidatorBalances)
+@router.get("/validator_balances", responses={200: {"model": ResponseModelValidatorBalances}, 503: {"model": ErrorResponseModel}})
 async def validator_balances(
         state_id: str = STATE_ID_QUERY_PARAMETER):
     """
@@ -87,7 +89,7 @@ async def validator_balances(
     return response
 
 
-@router.get("/epoch_committees", response_model=ResponseModelEpochCommittees)
+@router.get("/epoch_committees", responses={200: {"model": ResponseModelEpochCommittees}, 503: {"model": ErrorResponseModel}})
 async def epoch_committees(
         state_id: str = STATE_ID_QUERY_PARAMETER):
     """
@@ -97,7 +99,7 @@ async def epoch_committees(
     return response
 
 
-@router.get("/block_headers", response_model=ResponseModelBlockHeaders)
+@router.get("/block_headers", responses={200: {"model": ResponseModelBlockHeaders}, 503: {"model": ErrorResponseModel}})
 async def block_headers():
     """
     Retrieves block headers matching given query. By default it will fetch current head slot blocks.
@@ -106,7 +108,7 @@ async def block_headers():
     return response
 
 
-@router.get("/block_header", response_model=ResponseModelBlockHeader)
+@router.get("/block_header", responses={200: {"model": ResponseModelBlockHeader}, 503: {"model": ErrorResponseModel}})
 async def block_header(
         block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER):
     """
@@ -116,7 +118,7 @@ async def block_header(
     return response
 
 
-@router.get("/block", response_model=ResponseModelBlock)
+@router.get("/block", responses={200: {"model": ResponseModelBlock}, 503: {"model": ErrorResponseModel}})
 async def block(
         block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER):
     """
@@ -126,7 +128,7 @@ async def block(
     return response
 
 
-@router.get("/block_root", response_model=ResponseModelBlockRoot)
+@router.get("/block_root", responses={200: {"model": ResponseModelBlockRoot}, 503: {"model": ErrorResponseModel}})
 async def block_root(
         block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER):
     """
@@ -136,7 +138,7 @@ async def block_root(
     return response
 
 
-@router.get("/block_attestations", response_model=ResponseModelBlockAttestations)
+@router.get("/block_attestations", responses={200: {"model": ResponseModelBlockAttestations}, 503: {"model": ErrorResponseModel}})
 async def block_attestations(
         block_id: Union[int, str] = BLOCK_ID_QUERY_PARAMETER):
     """
@@ -146,7 +148,7 @@ async def block_attestations(
     return response
 
 
-@router.get("/attestations", response_model=ResponseModelAttestations)
+@router.get("/attestations", responses={200: {"model": ResponseModelAttestations}, 503: {"model": ErrorResponseModel}})
 async def attestations():
     """
     Retrieves attestations known by the node but not necessarily incorporated into any block
@@ -155,7 +157,7 @@ async def attestations():
     return response
 
 
-@router.get("/attester_slashings", response_model=ResponseModelAttesterSlashings)
+@router.get("/attester_slashings", responses={200: {"model": ResponseModelAttesterSlashings}, 503: {"model": ErrorResponseModel}})
 async def attester_slashings():
     """
     Retrieves attester slashings known by the node but not necessarily incorporated into any block
@@ -165,7 +167,7 @@ async def attester_slashings():
     return response
 
 
-@router.get("/proposer_slashings", response_model=ResponseModelProposerSlashings)
+@router.get("/proposer_slashings", responses={200: {"model": ResponseModelProposerSlashings}, 503: {"model": ErrorResponseModel}})
 async def proposer_slashings():
     """
     Retrieves proposer slashings known by the node but not necessarily incorporated into any block
@@ -175,7 +177,7 @@ async def proposer_slashings():
     return response
 
 
-@router.get("/voluntary_exits", response_model=ResponseModelVoluntaryExists)
+@router.get("/voluntary_exits", responses={200: {"model": ResponseModelVoluntaryExists}, 503: {"model": ErrorResponseModel}})
 async def voluntary_exits():
     """
     Retrieves voluntary exits known by the node but not necessarily incorporated into any block
