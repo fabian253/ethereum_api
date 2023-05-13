@@ -2,9 +2,10 @@
 fastapi[all]==0.88.0
 uvicorn[standard]==0.15.0
 gunicorn==20.1.0
-web3==6.3.0
 python-multipart==0.0.5
 python-jose[cryptography] == 3.3.0
 passlib[bcrypt] == 1.7.4
 numpy == 1.23.3
-mysql-connector-python==8.0.33
+web3==6.3.0
+# manually installed in Docker file due to resoltion error of protobuf with web3
+# mysql-connector-python==8.0.33

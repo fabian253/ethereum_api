@@ -11,8 +11,10 @@ ENV PYTHONUNBUFFERED=1
 
 # Install pip requirements
 RUN python -m pip install --upgrade pip
-COPY requirements.txt .
+COPY  requirements.txt .
 RUN python -m pip install -r requirements.txt
+# needed because of resoltion error of protobuf
+RUN python -m pip install mysql-connector-python==8.0.33
 
 WORKDIR /app
 COPY . /app
