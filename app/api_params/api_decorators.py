@@ -19,4 +19,10 @@ def connection_decorator(func):
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Database not available"
             )
+        except Exception as e:
+            raise e
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unknown server error"
+            )
     return wrapper
