@@ -156,7 +156,7 @@ class SqlDatabaseConnector:
                 else:
                     batch_end = len(many_data)+1
         else:
-            cursor.executemany(insert_query, batch)
+            cursor.executemany(insert_query, many_data)
             self.connection.commit()
 
         cursor.close()
@@ -235,7 +235,7 @@ class SqlDatabaseConnector:
 
     def query_contract_data(self,
                             table_name: str,
-                            token_standard: str,
+                            token_standard: Union[str, None] = None,
                             with_name: bool = False,
                             with_symbol: bool = False,
                             with_block_deployed: bool = False,
@@ -254,8 +254,12 @@ class SqlDatabaseConnector:
         if with_abi:
             fields.append("abi")
 
-        data = self.query_data(
-            table_name, fields, {token_standard: True}, limit)
+        if token_standard is None:
+            data = self.query_data(
+                table_name, fields, None, limit)
+        else:
+            data = self.query_data(
+                table_name, fields, {token_standard: True}, limit)
 
         data_types = self.query_data_type(table_name)
 
