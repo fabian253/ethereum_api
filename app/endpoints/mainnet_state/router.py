@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.dependencies import get_current_active_user
 from .schemas import *
 from .parameters import *
-from app.connectors import execution_client
+from app.connectors import execution_client, infura_execution_client
 from app.api_params.api_decorators import *
 
 router = APIRouter(
@@ -92,8 +92,15 @@ async def balance(
 
     wallet_address may be a checksum address or an ENS name
     """
-    response = execution_client.get_balance(wallet_address, block_identifier)
-    return response
+    try:
+        response = execution_client.get_balance(
+            wallet_address, block_identifier)
+        return response
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Wallet Address format incorrect."
+        )
 
 
 @router.get("/storage_at", responses={200: {"model": ResponseModelStorageAt}, 503: {"model": ErrorResponseModel}})
@@ -109,9 +116,15 @@ async def storage_at(
 
     wallet_address may be a checksum address or an ENS name
     """
-    response = execution_client.get_storage_at(
-        wallet_address, position, block_identifier)
-    return response
+    try:
+        response = execution_client.get_storage_at(
+            wallet_address, position, block_identifier)
+        return response
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Wallet Address format incorrect."
+        )
 
 
 @router.get("/code", responses={200: {"model": ResponseModelCode}, 503: {"model": ErrorResponseModel}})
@@ -124,8 +137,14 @@ async def code(
 
     wallet_address may be a checksum address or an ENS name
     """
-    response = execution_client.get_code(wallet_address)
-    return response
+    try:
+        response = execution_client.get_code(wallet_address)
+        return response
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Wallet Address format incorrect."
+        )
 
 
 @router.get("/transaction_count", responses={200: {"model": ResponseModelTransactionCount}, 503: {"model": ErrorResponseModel}})
@@ -140,12 +159,18 @@ async def transaction_count(
 
     wallet_address may be a checksum address or an ENS name
     """
-    reponse = execution_client.get_transaction_count(
-        wallet_address, block_identifier)
-    return reponse
+    try:
+        reponse = execution_client.get_transaction_count(
+            wallet_address, block_identifier)
+        return reponse
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Wallet Address format incorrect."
+        )
 
 
-@router.get("/estimate_gas", responses={200: {"model": ResponseModelEstimateGas}, 503: {"model": ErrorResponseModel}})
+@router.get("/estimate_gas", responses={200: {"model": ResponseModelEstimateGas}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
 @connection_decorator
 async def estimate_gas(
         from_address: str = FROM_ADDRESS_QUERY_PARAMETER,
@@ -157,6 +182,12 @@ async def estimate_gas(
 
     The transaction and block_identifier parameters are handled in the same manner as the send_transaction() method.
     """
-    # TODO: not working -> node not fully synced
-    response = execution_client.estimate_gas(from_address, to_address, value)
+    try:
+        response = execution_client.estimate_gas(
+            from_address, to_address, value)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.args[0]["message"]
+        )
     return response

@@ -13,6 +13,13 @@ TOKEN_STANDARD_QUERY_PARAMETER = Query(
     example="ERC20"
 )
 
+TOKEN_STANDARD_OPTIONAL_QUERY_PARAMETER = Query(
+    title="Token Standard",
+    description="Name of Token standard (ERC20, ERC721, ...)",
+    example="ERC20",
+    default=None
+)
+
 CONTRACT_FUNCTION_QUERY_PARAMETER = Query(
     title="Function Name",
     description="Name of the contract function",
@@ -87,7 +94,6 @@ ERC20_TOKEN_TRANSFERS_TO_ADDRESS_QUERY_PARAMETER = Query(
 ERC20_TOKEN_TRANSFERS_VALUE_QUERY_PARAMETER = Query(
     title="Value",
     description="Value of transfer",
-    example=1,
     default=None
 )
 

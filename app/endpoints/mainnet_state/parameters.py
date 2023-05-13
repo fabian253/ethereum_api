@@ -22,7 +22,7 @@ POSITION_QUERY_PARAMETER = Query(
 FROM_ADDRESS_QUERY_PARAMETER = Query(
     title="From Address",
     description="Address to send the transaction from",
-    example="0xd57db5c31a5185c238448a210f15135ebb8b0574"
+    example="0x8f2b5748bB4b4b3EE7F7a60b3E0Fc14A188c06a4"
 )
 
 TO_ADDRESS_QUERY_PARAMETER = Query(

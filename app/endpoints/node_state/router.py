@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from requests.exceptions import HTTPError
 from app.dependencies import get_current_active_user
 from .schemas import *
 from .parameters import *
@@ -129,8 +130,14 @@ async def peer(
     """
     Retrieves data about the given peer
     """
-    response = consensus_client.get_peer(peer_id)
-    return response
+    try:
+        response = consensus_client.get_peer(peer_id)
+        return response
+    except HTTPError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unknown peer id."
+        )
 
 
 @consensus_client_router.get("/fork_schedule", responses={200: {"model": ResponseModelForkSchedule}, 503: {"model": ErrorResponseModel}})

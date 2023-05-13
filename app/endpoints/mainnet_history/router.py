@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from web3.exceptions import BlockNotFound, TransactionNotFound, NoABIFound, ABIEventFunctionNotFound
 from app.dependencies import get_current_active_user
 from .schemas import *
 from .parameters import *
@@ -26,15 +27,14 @@ async def uncle_count(
 
     Throws BlockNotFound if the block is not found.
     """
-    response = execution_client.get_uncle_count(block_identifier)
-
-    if response is None:
+    try:
+        response = execution_client.get_uncle_count(block_identifier)
+        return response
+    except (BlockNotFound, ValueError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Block not found (block_identifier: {block_identifier})"
         )
-
-    return response
 
 
 @router.get("/uncle_by_block",
@@ -50,16 +50,15 @@ async def uncle_by_block(
 
     Throws BlockNotFound if the block is not found.
     """
-    response = execution_client.get_uncle_by_block(
-        block_identifier, uncle_index)
-
-    if response is None:
+    try:
+        response = execution_client.get_uncle_by_block(
+            block_identifier, uncle_index)
+        return response
+    except (BlockNotFound, ValueError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Block not found (block_identifier: {block_identifier}, uncle_index: {uncle_index})"
         )
-
-    return response
 
 
 @router.get("/block",
@@ -77,36 +76,37 @@ async def block(
 
     If full_transactions is True then the 'transactions' key will contain full transactions objects. Otherwise it will be an array of transaction hashes.
     """
-    response = execution_client.get_block(block_identifier, full_transactions)
-
-    if response is None:
+    try:
+        response = execution_client.get_block(
+            block_identifier, full_transactions)
+        return response
+    except (BlockNotFound, ValueError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Block not found (block_identifier: {block_identifier})"
         )
-
-    return response
 
 
 @router.get("/transaction",
             responses={200: {"model": ResponseModelGetTransaction}, 400: {"model": ErrorResponseModel}, 503: {"model": ErrorResponseModel}})
 @connection_decorator
 async def transaction(
-        transaction_hash: str = TRANSACTION_HASH_QUERY_PARAMETER):
+        transaction_hash: str = TRANSACTION_HASH_QUERY_PARAMETER,
+        decode_input: bool = False):
     """
     Returns the transaction specified by transaction_hash. 
 
     Throws TransactionNotFound if a transaction is not found at specified arguments.
     """
-    response = execution_client.get_transaction(transaction_hash)
-
-    if response is None:
+    try:
+        response = execution_client.get_transaction(
+            transaction_hash, decode_input)
+        return response
+    except (TransactionNotFound, ValueError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Transaction not found (transaction_hash: {transaction_hash})"
         )
-
-    return response
 
 
 @router.get("/transaction_by_block",
@@ -121,16 +121,15 @@ async def transaction_by_block(
 
     Throws TransactionNotFound if a transaction is not found at specified arguments.
     """
-    response = execution_client.get_transaction_by_block(
-        block_identifier, transaction_index)
-
-    if response is None:
+    try:
+        response = execution_client.get_transaction_by_block(
+            block_identifier, transaction_index)
+        return response
+    except (TransactionNotFound, ValueError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Transaction not found (block_identifier: {block_identifier}, transaction_index: {transaction_index})"
         )
-
-    return response
 
 
 @router.get("/block_transaction_count",
@@ -144,15 +143,15 @@ async def block_transaction_count(
 
     Throws BlockNotFoundError if transactions are not found.
     """
-    response = execution_client.get_block_transaction_count(block_identifier)
-
-    if response is None:
+    try:
+        response = execution_client.get_block_transaction_count(
+            block_identifier)
+        return response
+    except (BlockNotFound, ValueError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Block not found (block_identifier: {block_identifier})"
         )
-
-    return response
 
 
 @router.get("/transaction_receipt",
@@ -167,12 +166,11 @@ async def transaction_receipt(
 
     If status in response equals 1 the transaction was successful. If it is equals 0 the transaction was reverted by EVM.
     """
-    response = execution_client.get_transaction_receipt(transaction_hash)
-
-    if response is None:
+    try:
+        response = execution_client.get_transaction_receipt(transaction_hash)
+        return response
+    except (TransactionNotFound, ValueError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Transaction not found (transaction_hash: {transaction_hash})"
         )
-
-    return response

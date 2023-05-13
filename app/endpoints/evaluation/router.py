@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from web3.exceptions import BlockNotFound, TransactionNotFound, NoABIFound, ABIEventFunctionNotFound
 from app.dependencies import get_current_active_user
 from .schemas import *
 from .parameters import *
@@ -25,10 +26,15 @@ async def evaluate_block_request_time(
 
     If full_transactions is True then the 'transactions' key will contain full transactions objects. Otherwise it will be an array of transaction hashes.
     """
-    response = evaluate_request_time_get_block(
-        execution_client, block_identifier_list, full_transactions)
-
-    return response
+    try:
+        response = evaluate_request_time_get_block(
+            execution_client, block_identifier_list, full_transactions)
+        return response
+    except (BlockNotFound, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Block not found while evaluation."
+        )
 
 
 @router.get("/evaluate_transaction_request_time", responses={503: {"model": ErrorResponseModel}})
@@ -37,10 +43,13 @@ async def evaluate_block_request_time(
         transaction_hash_list: list[str] = TRANSACTION_HASH_LIST_QUERY_PARAMETER):
     """
     Evaluate request time of get_transaction method.
-
-    If full_transactions is True then the 'transactions' key will contain full transactions objects. Otherwise it will be an array of transaction hashes.
     """
-    response = evaluate_request_time_get_transaction(
-        execution_client, transaction_hash_list)
-
-    return response
+    try:
+        response = evaluate_request_time_get_transaction(
+            execution_client, transaction_hash_list)
+        return response
+    except (TransactionNotFound, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transaction not found while evaluation."
+        )
