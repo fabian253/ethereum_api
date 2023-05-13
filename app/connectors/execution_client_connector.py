@@ -1,6 +1,6 @@
 from web3 import Web3
 from web3._utils.empty import Empty
-from web3.exceptions import BlockNotFound, TransactionNotFound, NoABIFound, ABIEventFunctionNotFound
+from web3.exceptions import BlockNotFound, TransactionNotFound, NoABIFound, ABIFunctionNotFound, ABIEventFunctionNotFound
 import json
 import requests
 from enum import Enum
@@ -110,12 +110,12 @@ class ExecutionClientConnector:
         return {"api_version": response}
 
     def get_client_version(self):
-        response = self.execution_client.clientVersion
+        response = self.execution_client.client_version
 
         return {"client_version": response}
 
     def get_balance(self, wallet_address, block_identifier=None):
-        wallet_address = Web3.toChecksumAddress(wallet_address)
+        wallet_address = Web3.to_checksum_address(wallet_address)
 
         if block_identifier is None:
             response = self.execution_client.eth.get_balance(wallet_address)
@@ -131,7 +131,7 @@ class ExecutionClientConnector:
         return {"block_number": response}
 
     def get_storage_at(self, wallet_address, position, block_identifier=None):
-        wallet_address = Web3.toChecksumAddress(wallet_address)
+        wallet_address = Web3.to_checksum_address(wallet_address)
 
         if block_identifier is None:
             response = self.execution_client.eth.get_storage_at(
@@ -143,14 +143,14 @@ class ExecutionClientConnector:
         return {"storage_value": response}
 
     def get_code(self, wallet_address):
-        wallet_address = Web3.toChecksumAddress(wallet_address)
+        wallet_address = Web3.to_checksum_address(wallet_address)
 
         response = self.execution_client.eth.get_code(wallet_address)
 
         return {"bytecode": response}
 
     def get_transaction_count(self, wallet_address, block_identifier=None):
-        wallet_address = Web3.toChecksumAddress(wallet_address)
+        wallet_address = Web3.to_checksum_address(wallet_address)
 
         if block_identifier is None:
             response = self.execution_client.eth.get_transaction_count(
@@ -162,8 +162,8 @@ class ExecutionClientConnector:
         return {"transaction_count": response}
 
     def estimate_gas(self, from_address, to_address, value):
-        from_address = Web3.toChecksumAddress(from_address)
-        to_address = Web3.toChecksumAddress(to_address)
+        from_address = Web3.to_checksum_address(from_address)
+        to_address = Web3.to_checksum_address(to_address)
 
         response = self.execution_client.eth.estimate_gas({
             "to": to_address,
@@ -176,93 +176,71 @@ class ExecutionClientConnector:
     # History methods
 
     def get_block_transaction_count(self, block_identifier):
-        try:
-            response = self.execution_client.eth.get_block_transaction_count(
-                block_identifier)
-        except (BlockNotFound, ValueError):
-            return None
+        response = self.execution_client.eth.get_block_transaction_count(
+            block_identifier)
 
         return {"block_transaction_count": response}
 
     def get_uncle_count(self, block_identifier):
-        try:
-            response = self.execution_client.eth.get_uncle_count(
-                block_identifier)
-        except (BlockNotFound, ValueError):
-            return None
-
+        response = self.execution_client.eth.get_uncle_count(
+            block_identifier)
         return {"uncle_count": response}
 
     def get_block(self, block_identifier=None, full_transactions=False):
-        try:
-            if block_identifier is None:
-                response = self.execution_client.eth.get_block(
-                    self.execution_client.eth.default_block, full_transactions)
-            else:
-                response = self.execution_client.eth.get_block(
-                    block_identifier, full_transactions)
-        except (BlockNotFound, ValueError):
-            return None
+        if block_identifier is None:
+            response = self.execution_client.eth.get_block(
+                self.execution_client.eth.default_block, full_transactions)
+        else:
+            response = self.execution_client.eth.get_block(
+                block_identifier, full_transactions)
 
         return json.loads(Web3.to_json(response))
 
     def get_transaction(self, transaction_hash: str, decode_input: bool = True):
-        # TODO: improve decode input
-        # TODO: why is abi needed?
-        try:
-            response = self.execution_client.eth.get_transaction(
-                transaction_hash)
+        response = self.execution_client.eth.get_transaction(
+            transaction_hash)
 
-            response = json.loads(Web3.to_json(response))
+        response = json.loads(Web3.to_json(response))
 
-            if decode_input and response["input"] != "0x":
-                contract_address = response["to"]
+        if decode_input and response["input"] != "0x":
+            contract_address = response["to"]
 
-                contract_abi = self.get_contract_abi(contract_address)
+            contract_abi = self.get_contract_abi(contract_address)
 
-                contract = self.execution_client.eth.contract(
-                    address=contract_address, abi=contract_abi)
+            contract = self.execution_client.eth.contract(
+                address=contract_address, abi=contract_abi)
 
-                func_obj, func_params = contract.decode_function_input(
-                    response["input"])
+            func_obj, func_params = contract.decode_function_input(
+                response["input"])
 
-                decoded_input = {
-                    "function": func_obj,
-                    "params": func_params
-                }
+            for param_name, param in func_params.items():
+                if type(param) is int:
+                    func_params[param_name] = str(param)
+                if type(param) is bytes:
+                    func_params[param_name] = f"0x{param.hex()}"
 
-                response["input_decoded"] = decoded_input
+            decoded_input = {
+                "function": func_obj,
+                "params": func_params
+            }
 
-        except TransactionNotFound:
-            return None
+            response["input_decoded"] = decoded_input
 
         return response
 
     def get_transaction_by_block(self, block_identifier, transaction_index):
-        try:
-            response = self.execution_client.eth.get_transaction_by_block(
-                block_identifier, transaction_index)
-        except (TransactionNotFound, ValueError):
-            return None
-
+        response = self.execution_client.eth.get_transaction_by_block(
+            block_identifier, transaction_index)
         return json.loads(Web3.to_json(response))
 
     def get_transaction_receipt(self, transaction_hash):
-        try:
-            response = self.execution_client.eth.get_transaction_receipt(
-                transaction_hash)
-        except (TransactionNotFound, ValueError):
-            return None
-
+        response = self.execution_client.eth.get_transaction_receipt(
+            transaction_hash)
         return json.loads(Web3.to_json(response))
 
     def get_uncle_by_block(self, block_identifier, uncle_index):
-        try:
-            response = self.execution_client.eth.get_uncle_by_block(
-                block_identifier, uncle_index)
-        except (BlockNotFound, ValueError):
-            return None
-
+        response = self.execution_client.eth.get_uncle_by_block(
+            block_identifier, uncle_index)
         return json.loads(Web3.to_json(response))
 
     # Contract methods
@@ -371,7 +349,7 @@ class ExecutionClientConnector:
             contract_abi = self.get_contract_abi(contract_address)
 
         contract = self.execution_client.eth.contract(
-            Web3.toChecksumAddress(contract_address), abi=contract_abi)
+            Web3.to_checksum_address(contract_address), abi=contract_abi)
 
         contract_function = contract.functions[function_name]
 
@@ -388,7 +366,7 @@ class ExecutionClientConnector:
         contract_abi = self.get_contract_abi(contract_address)
 
         contract = self.execution_client.eth.contract(
-            Web3.toChecksumAddress(contract_address), abi=contract_abi)
+            Web3.to_checksum_address(contract_address), abi=contract_abi)
 
         contract_event_list = []
 
@@ -404,7 +382,7 @@ class ExecutionClientConnector:
         while more_batches:
             try:
                 # try if batch size is in limits (<10000)
-                event_filter = contract_event.createFilter(
+                event_filter = contract_event.create_filter(
                     fromBlock=batch_from_block, toBlock=batch_to_block, argument_filters=argument_filters)
 
                 response = event_filter.get_all_entries()
@@ -513,6 +491,10 @@ class ExecutionClientConnector:
         except:
             token_symbol = None
         try:
+            deploy_block = self.get_contract_deploy_block(contract_address)
+        except:
+            deploy_block = None
+        try:
             token_total_supply = self.execute_contract_function(
                 contract_address, "totalSupply", contract_abi)
         except:
@@ -522,5 +504,6 @@ class ExecutionClientConnector:
             "address": contract_address,
             "name": token_name,
             "symbol": token_symbol,
+            "deploy_block": deploy_block,
             "total_supply": token_total_supply
         }
