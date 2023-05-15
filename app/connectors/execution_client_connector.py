@@ -504,6 +504,6 @@ class ExecutionClientConnector:
             "address": contract_address,
             "name": token_name,
             "symbol": token_symbol,
-            "deploy_block": deploy_block,
+            "block_deployed": deploy_block,
             "total_supply": token_total_supply
         }

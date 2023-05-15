@@ -204,6 +204,7 @@ class SqlDatabaseConnector:
             "contract_address": contract_address,
             "name": contract_metadata["name"],
             "symbol": contract_metadata["symbol"],
+            "block_deployed": contract_metadata["block_deployed"],
             "total_supply": contract_metadata["total_supply"],
         }
 
