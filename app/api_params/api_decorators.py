@@ -20,7 +20,6 @@ def connection_decorator(func):
                 detail="Database not available"
             )
         except Exception as e:
-            raise e
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unknown server error"
