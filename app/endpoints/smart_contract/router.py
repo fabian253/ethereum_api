@@ -122,7 +122,8 @@ async def contract_events(
         from_block: Union[int,
                           str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
         to_block: Union[int,
-                        str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER):
+                        str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
+        decode_events: bool = False):
     """
     Returns the events of the given contract address under the provided filters.
 
@@ -132,7 +133,7 @@ async def contract_events(
     # TODO: remove infura when syced
     try:
         response = infura_execution_client.get_contract_events(
-            contract_address, from_block, to_block)
+            contract_address, from_block, to_block, decode_events)
         return response
     except NoABIFound:
         raise HTTPException(

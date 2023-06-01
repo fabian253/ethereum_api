@@ -420,7 +420,29 @@ class ExecutionClientConnector:
     def get_contract_events(self,
                             contract_address: str,
                             from_block: Union[int, str] = 0,
-                            to_block: Union[int, str] = "latest"):
+                            to_block: Union[int, str] = "latest",
+                            decode_events: bool = False):
+        if decode_events:
+            # init contract abi and event signatures
+            contract_abi = self.get_contract_abi(contract_address)
+            contract_event_abi = [
+                abi for abi in contract_abi if abi["type"] == "event"]
+            events = {}
+
+            contract = self.execution_client.eth.contract(
+                Web3.to_checksum_address(contract_address), abi=contract_abi)
+
+            for event_abi in contract_event_abi:
+                name = event_abi["name"]
+                inputs = [param["type"] for param in event_abi["inputs"]]
+                inputs = ",".join(inputs)
+                # Hash event signature
+                event_signature_text = f"{name}({inputs})"
+                event_signature_hex = Web3.to_hex(
+                    Web3.keccak(text=event_signature_text))
+
+                events[event_signature_hex] = eval(f"contract.events.{name}()")
+
         contract_event_list = []
 
         # create event object
@@ -442,9 +464,22 @@ class ExecutionClientConnector:
 
                 response = event_filter.get_all_entries()
 
-                contract_event_list.extend(
-                    json.loads(Web3.to_json(response)))
+                # decode events if flag
+                if decode_events:
+                    for encoded_event in response:
+                        receipt_event_signature_hex = Web3.to_hex(
+                            encoded_event["topics"][0])
 
+                        event = events[receipt_event_signature_hex]
+                        decoded_event = event.process_log(encoded_event)
+
+                        contract_event_list.append(
+                            json.loads(Web3.to_json(decoded_event)))
+                else:
+                    contract_event_list.extend(
+                        json.loads(Web3.to_json(response)))
+
+                # set new block intervalls
                 if batch_to_block == to_block:
                     more_batches = False
                 else:
