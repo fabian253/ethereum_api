@@ -102,3 +102,9 @@ CONTRACT_ADDRESS_QUERY_PARAMETER = Query(
     description="Address of the contract",
     example="0xdAC17F958D2ee523a2206206994597C13D831ec7"
 )
+
+DECODE_EVENTS_QUERY_PARAMETER = Query(
+    title="Decode Events",
+    description="Decode contract events (not for Proxy Contracts)",
+    default=False
+)

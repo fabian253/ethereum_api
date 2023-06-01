@@ -123,12 +123,15 @@ async def contract_events(
                           str, None] = TOKEN_TRANSFERS_FROM_BLOCK_QUERY_PARAMETER,
         to_block: Union[int,
                         str, None] = TOKEN_TRANSFERS_TO_BLOCK_QUERY_PARAMETER,
-        decode_events: bool = False):
+        decode_events: bool = DECODE_EVENTS_QUERY_PARAMETER):
     """
     Returns the events of the given contract address under the provided filters.
 
     * from_block (optional): first block to filter from
     * to_block (optional): last block to filter to
+    * decode_events (optional): decode events
+
+    Events of proxy contracts cannot be decoded since the proxy contract ABI is not the matching one to the events, which is why an error is raised.
     """
     # TODO: remove infura when syced
     try:
@@ -144,6 +147,11 @@ async def contract_events(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid contract address (contract_address: {contract_address})"
+        )
+    except ABIEventFunctionNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"ABI event not found (contract_address: {contract_address})"
         )
 
 

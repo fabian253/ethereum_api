@@ -469,6 +469,9 @@ class ExecutionClientConnector:
                     for encoded_event in response:
                         receipt_event_signature_hex = Web3.to_hex(
                             encoded_event["topics"][0])
+                        
+                        if not receipt_event_signature_hex in events.keys():
+                            raise ABIEventFunctionNotFound
 
                         event = events[receipt_event_signature_hex]
                         decoded_event = event.process_log(encoded_event)
