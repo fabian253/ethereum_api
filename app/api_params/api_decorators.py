@@ -9,6 +9,8 @@ def connection_decorator(func):
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
+        except HTTPException as e:
+            raise e
         except ConnectionError:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
