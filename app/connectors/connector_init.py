@@ -17,12 +17,6 @@ execution_client_url = f"http://{config.EXECUTION_CLIENT_IP}:{config.EXECUTION_C
 execution_client = ExecutionClientConnector(
     execution_client_url, config.ETHERSCAN_URL, config.ETHERSCAN_API_KEY, sql_db_connector, config.SQL_DATABASE_TABLE_CONTRACT)
 
-# TODO: remove when node is fully synced -> currently used for contract endpoints only
-# init infura execution client
-infura_execution_client_url = f"{config.INFURA_URL}/{config.INFURA_API_KEY}"
-infura_execution_client = ExecutionClientConnector(
-    infura_execution_client_url, config.ETHERSCAN_URL, config.ETHERSCAN_API_KEY, sql_db_connector, config.SQL_DATABASE_TABLE_CONTRACT)
-
 # init conensus client
 consensus_client = ConsensusClientConnector(
     config.CONSENCUS_CLIENT_IP, config.CONSENSUS_CLIENT_PORT)

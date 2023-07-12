@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.dependencies import get_current_active_user
 from .schemas import *
 from .parameters import *
-from app.connectors import execution_client, infura_execution_client
+from app.connectors import execution_client
 from app.api_params.api_decorators import *
 
 router = APIRouter(

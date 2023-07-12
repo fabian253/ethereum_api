@@ -5,7 +5,7 @@ from app.dependencies import get_current_active_user
 from .schemas import *
 from .parameters import *
 from typing import Union
-from app.connectors import execution_client, infura_execution_client, sql_db_connector, TokenStandard
+from app.connectors import execution_client, sql_db_connector, TokenStandard
 from app.api_params.api_decorators import *
 
 router = APIRouter(
@@ -45,9 +45,8 @@ async def contract_abi(
     """
     Returns the Contract Application Binary Interface (ABI) of a verified smart contract.
     """
-    # TODO: remove infura when syced
     try:
-        response = infura_execution_client.get_contract_abi(contract_address)
+        response = execution_client.get_contract_abi(contract_address)
         return response
     except NoABIFound:
         raise HTTPException(
@@ -63,9 +62,8 @@ async def contract_implemented_token_standards(
     """
     Return if token standards are implemented by contract Application Binary Interface (ABI).
     """
-    # TODO: remove infura when syced
     try:
-        response = infura_execution_client.get_contract_implemented_token_standards(
+        response = execution_client.get_contract_implemented_token_standards(
             contract_address)
         return response
     except NoABIFound:
@@ -83,9 +81,8 @@ async def contract_function_overview(
     """
     Returns all contract functions.
     """
-    # TODO: remove infura when syced
     try:
-        response = infura_execution_client.get_all_contract_functions(
+        response = execution_client.get_all_contract_functions(
             contract_address, as_abi)
         return response
     except NoABIFound:
@@ -103,9 +100,8 @@ async def contract_event_overview(
     """
     Returns all contract events.
     """
-    # TODO: remove infura when syced
     try:
-        response = infura_execution_client.get_all_contract_events(
+        response = execution_client.get_all_contract_events(
             contract_address, as_abi)
         return response
     except NoABIFound:
@@ -133,9 +129,8 @@ async def contract_events(
 
     Events of proxy contracts cannot be decoded since the proxy contract ABI is not the matching one to the events, which is why an error is raised.
     """
-    # TODO: remove infura when syced
     try:
-        response = infura_execution_client.get_contract_events(
+        response = execution_client.get_contract_events(
             contract_address, from_block, to_block, decode_events)
         return response
     except NoABIFound:
@@ -199,9 +194,8 @@ async def contract_transfers(
     if token_id is not None:
         argument_filters["tokenId"] = token_id
 
-    # TODO: remove infura when syced
     try:
-        response = infura_execution_client.get_token_transfers(
+        response = execution_client.get_token_transfers(
             contract_address,
             from_block,
             to_block,
@@ -232,9 +226,8 @@ async def execute_contract_function(
 
     Will only work for call functions.
     """
-    # TODO: remove infura when syced
     try:
-        response = infura_execution_client.execute_contract_function(
+        response = execution_client.execute_contract_function(
             contract_address, function_name, *function_args)
         return {function_name: response}
     except NoABIFound:
@@ -293,7 +286,7 @@ async def contract_deploy_block(
     Returns null if no events are performed for the contract.
     """
     try:
-        response = infura_execution_client.get_contract_deploy_block(
+        response = execution_client.get_contract_deploy_block(
             contract_address)
         return {
             "block_number": response
@@ -313,8 +306,7 @@ async def contract_metadata(
     Return contract metadata.
     Metadata may be empty if functions are not implemented by contract.
     """
-    # TODO: remove infura when syced
-    response = infura_execution_client.get_contract_metadata(
+    response = execution_client.get_contract_metadata(
         contract_address)
 
     if response["total_supply"] is not None:
@@ -368,9 +360,8 @@ async def insert_contract_transactions(contract_address: str = ERC721_TOKEN_TRAN
     if token_id is not None:
         argument_filters["tokenId"] = token_id
 
-    # TODO: remove infura when syced
     try:
-        transactions = infura_execution_client.get_token_transfers(
+        transactions = execution_client.get_token_transfers(
             contract_address,
             from_block,
             to_block,
