@@ -129,9 +129,3 @@ dmypy.json
 .pyre/
 
 # Custom
-app/config.py
-app/api_params/authentication_hash_creation.py
-app/api_params/users_db.py
-app/db_params/sql_commands.sql
-app/execution_client_connector_test.py
-app/sql_database_connector_test.py
