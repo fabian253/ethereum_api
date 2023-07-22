@@ -9,7 +9,7 @@ from typing import Union
 from app.connectors.sql_database_connector import SqlDatabaseConnector
 
 
-timeout = 60
+timeout = 120
 
 # init token standards
 TokenStandard = Enum("TokenStandard", [(token_standard.replace(
@@ -469,7 +469,7 @@ class ExecutionClientConnector:
                     for encoded_event in response:
                         receipt_event_signature_hex = Web3.to_hex(
                             encoded_event["topics"][0])
-                        
+
                         if not receipt_event_signature_hex in events.keys():
                             raise ABIEventFunctionNotFound
 
@@ -501,14 +501,19 @@ class ExecutionClientConnector:
         return contract_event_list
 
     def get_contract_deploy_block(self, contract_address: str):
+        #TODO fix function with own node
         try:
-            event_filter = self.execution_client.eth.filter({
+            filter_params = {
                 "fromBlock": 0,
                 "toBlock": "latest",
                 "address": contract_address
-            })
+            }
 
-            response = event_filter.get_all_entries()
+            # event_filter = self.execution_client.eth.filter(filter_params)
+
+            response = self.execution_client.eth.get_logs(filter_params)
+
+            # response = event_filter.get_all_entries()
 
             if len(response) == 0:
                 return None
@@ -518,7 +523,9 @@ class ExecutionClientConnector:
             return response
 
         except ValueError as e:
-            if "data" in e.args[0].keys():
+            if e.args[0]["code"] == -32002:
+                return None
+            elif e.args[0]["code"] == -32005:
                 return int(e.args[0]["data"]["from"], 16)
             else:
                 return None
