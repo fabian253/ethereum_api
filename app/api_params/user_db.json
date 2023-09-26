@@ -1,0 +1,72 @@
+{
+    "user_0": {
+        "username": "user_0",
+        "full_name": "User 0",
+        "email": "user_0@ethereum_api.com",
+        "hashed_password": "$2b$12$6xghLx2ddrY3PHP1dyXCuOdLhp9RhqKPPPsnsNIct0Rnc1Qfxrjm6",
+        "disabled": false
+    },
+    "user_1": {
+        "username": "user_1",
+        "full_name": "User 1",
+        "email": "user_1@ethereum_api.com",
+        "hashed_password": "$2b$12$qBJVDLVgXNgYZfKekqMUGeIpge.NKljauke7a6UbsXGuHwQE.dMf2",
+        "disabled": false
+    },
+    "user_2": {
+        "username": "user_2",
+        "full_name": "User 2",
+        "email": "user_2@ethereum_api.com",
+        "hashed_password": "$2b$12$d6jjHQcEHPChOoKwmNwuIu9IJC2MBDEIS99P1LpZH8RjWHOV4qshe",
+        "disabled": false
+    },
+    "user_3": {
+        "username": "user_3",
+        "full_name": "User 3",
+        "email": "user_3@ethereum_api.com",
+        "hashed_password": "$2b$12$2.EXnzUqjyMr5O.FhrUzmexoKB/tZQzTBtrkRMHUSwJzdXypt1s5.",
+        "disabled": false
+    },
+    "user_4": {
+        "username": "user_4",
+        "full_name": "User 4",
+        "email": "user_4@ethereum_api.com",
+        "hashed_password": "$2b$12$W2ZEkZ0bVwHLMQFQftWDS.vZqDw7NgO3s0NrAS5q1AjMgvkVnM9be",
+        "disabled": false
+    },
+    "user_5": {
+        "username": "user_5",
+        "full_name": "User 5",
+        "email": "user_5@ethereum_api.com",
+        "hashed_password": "$2b$12$rdmrohUM9hzJquJvrZmKEOLWuvHYlwH2VyYbwd/Ti0k90YAew4P0i",
+        "disabled": false
+    },
+    "user_6": {
+        "username": "user_6",
+        "full_name": "User 6",
+        "email": "user_6@ethereum_api.com",
+        "hashed_password": "$2b$12$/J46bH/j4s5Ez6RG/Aaz8.JZzeN54ZuAmMC36FIrvWpH2CdTPzUs6",
+        "disabled": false
+    },
+    "user_7": {
+        "username": "user_7",
+        "full_name": "User 7",
+        "email": "user_7@ethereum_api.com",
+        "hashed_password": "$2b$12$X0O3gYymtI3oVfTF9RmkMul5ufAaMvtSGkVK.CSc3Mq/s52EcTCGu",
+        "disabled": false
+    },
+    "user_8": {
+        "username": "user_8",
+        "full_name": "User 8",
+        "email": "user_8@ethereum_api.com",
+        "hashed_password": "$2b$12$1RLUJ/7wY5tFmw0t87bN7ugjJJlrsXRMVuHlV2jXRytWO3963UBY6",
+        "disabled": false
+    },
+    "user_9": {
+        "username": "user_9",
+        "full_name": "User 9",
+        "email": "user_9@ethereum_api.com",
+        "hashed_password": "$2b$12$tzA8pqeJj5Fn7FCDCz3cP.s1ucyh.FN90R3gAz9Juz2YTAdGz7RbK",
+        "disabled": false
+    }
+}

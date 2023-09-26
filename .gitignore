@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 
 # Custom
+app/user_db_gen.py
+app/user_list.json

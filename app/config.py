@@ -1,10 +1,12 @@
 # execution client
-EXECUTION_CLIENT_IP = "134.155.111.231"  # for local testing
-# EXECUTION_CLIENT_IP = "172.17.0.3"  # for server deployment
+# EXECUTION_CLIENT_IP = "134.155.111.231"  # for local testing
+# EXECUTION_CLIENT_IP = "172.17.0.3"  # for server deployment (explicit)
+EXECUTION_CLIENT_IP = "127.0.0.1"  # for server deployment
 EXECUTION_CLIENT_PORT = 8545
 # consensus client
-CONSENCUS_CLIENT_IP = "134.155.111.231"  # for local testing
-# CONSENCUS_CLIENT_IP = "172.17.0.4"  # for server deployment
+# CONSENCUS_CLIENT_IP = "134.155.111.231"  # for local testing
+# CONSENCUS_CLIENT_IP = "172.17.0.4"  # for server deployment (explicit)
+CONSENCUS_CLIENT_IP = "127.0.0.1"  # for server deployment
 CONSENSUS_CLIENT_PORT = 5052
 
 # to get a string like this run: openssl rand -hex 32
@@ -17,7 +19,8 @@ ETHERSCAN_URL = "https://api.etherscan.io/api"
 ETHERSCAN_API_KEY = "NZW3WAVANMS9WHFJZSB69MQFJEZ1D1E54R"
 
 # mysql database
-SQL_DATABASE_HOST = "134.155.111.231"
+# SQL_DATABASE_HOST = "134.155.111.231" # for local testing
+SQL_DATABASE_HOST = "127.0.0.1" # for server deployment
 SQL_DATABASE_PORT = 3307
 SQL_DATABASE_USER = "root"
 SQL_DATABASE_PASSWORD = "admin"

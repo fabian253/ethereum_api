@@ -4,8 +4,11 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 import app.config as config
-from app.api_params.user_db import user_db
 from app.endpoints.auth.schemas import *
+import json
+
+with open("app/api_params/user_db.json", "r") as f:
+    user_db = json.load(f)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
